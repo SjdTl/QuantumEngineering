@@ -13,3 +13,4 @@
 - Quantum snake (**already exists)**
 - Quantum tetris (**already exists**)
 - Quantum routing (something like a Dijkstra algorithm)
+- Quantum machine learning
