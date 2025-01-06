@@ -7,14 +7,7 @@
 - [Alibaba cloud API](https://github.com/alibaba/acqdp)
 
 ## Project options:
-- Algorithms (see [quantum zoo](https://quantumalgorithmzoo.org/))
-- Games (chess, connect four, tic-tac-toe) (**already exist**)
+- Extend quantum checkers (and potentially with an ai solver)
   *Checkers with interference:
-    https://theses.liacs.nl/pdf/2023-2024-NouwelandLvandenLuuk.pdf
-    https://arxiv.org/pdf/1906.05836
-- AI performance with quantum chess/checkers
-- Extend quantum checkers
-- Quantum snake (**already exists)**
-- Quantum tetris (**already exists**)
 - Quantum routing (something like a Dijkstra algorithm)
 - Quantum machine learning
