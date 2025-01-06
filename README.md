@@ -9,6 +9,9 @@
 ## Project options:
 - Algorithms (see [quantum zoo](https://quantumalgorithmzoo.org/))
 - Games (chess, connect four, tic-tac-toe) (**already exist**)
+  *Checkers with interference:
+    https://theses.liacs.nl/pdf/2023-2024-NouwelandLvandenLuuk.pdf
+    https://arxiv.org/pdf/1906.05836
 - AI performance with quantum chess/checkers
 - Extend quantum checkers
 - Quantum snake (**already exists)**
