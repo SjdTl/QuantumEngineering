@@ -11,3 +11,6 @@
   *Checkers with interference:
 - Quantum routing (something like a Dijkstra algorithm)
 - Quantum machine learning
+
+## Qiskit exercises
+- [IBM challenge 2024](https://github.com/qiskit-community/ibm-quantum-challenge-2024?tab=readme-ov-file)
