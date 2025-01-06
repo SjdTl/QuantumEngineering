@@ -10,6 +10,6 @@
 - Algorithms (see [quantum zoo](https://quantumalgorithmzoo.org/))
 - Games (chess, connect four, tic-tac-toe) (**already exist**)
 - AI performance with quantum chess/checkers
-- Quantum snake 
+- Quantum snake (**already exists)**
 - Quantum tetris (**already exists**)
 - Quantum routing (something like a Dijkstra algorithm)
