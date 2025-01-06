@@ -8,5 +8,8 @@
 
 ## Project options:
 - Algorithms (see [quantum zoo](https://quantumalgorithmzoo.org/))
-- Games (chess, connect four, tic-tac-toe)
+- Games (chess, connect four, tic-tac-toe) (**already exist**)
 - AI performance with quantum chess/checkers
+- Quantum snake 
+- Quantum tetris (**already exists**)
+- Quantum routing (something like a Dijkstra algorithm)
