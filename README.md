@@ -9,3 +9,4 @@
 ## Project options:
 - Algorithms (see [quantum zoo](https://quantumalgorithmzoo.org/))
 - Games (chess, connect four, tic-tac-toe)
+- AI performance with quantum chess/checkers
