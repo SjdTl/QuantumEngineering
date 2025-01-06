@@ -1,6 +1,6 @@
 # QuantumEngineering
 ## Hardware/software options:
-- [qiskit](https://www.ibm.com/quantum/qiskit)
+- [qiskit](https://www.ibm.com/quantum/qiskit) ([documentation](https://docs.quantum.ibm.com/guides))
 - [Project Q](https://my.projectq.co/)
 - [Qutech demonstrators](https://qutech.nl/demonstrators/)
 - [Quantum Inpspire](https://www.quantum-inspire.com/) with the [Python API](https://www.quantum-inspire.com/kbase/low-level-api/)
