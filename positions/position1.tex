@@ -1,0 +1,36 @@
+% dvisvgm --pdf name
+% latexmk -C
+\documentclass[preview]{standalone}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{svg}
+\usepackage{minted}
+
+\usetikzlibrary{shapes.geometric, arrows}
+\usetikzlibrary{quantikz2}
+     \tikzset{operator/.append style={fill=white!0}}
+\begin{document}
+    \begin{tikzpicture}[transform shape, every node/.append style={}, color=gray, node distance = 2cm]
+        \node (board) [scale=0.4] at (0,0) {\includesvg{position1.svg}};
+        \node[above] at (board.north) {\Huge Board};
+
+        \node (quantcirc) at (9, 0) {
+            \begin{quantikz}[color=gray, scale=1.5]
+                &\setwiretype{n} \lstick{\small$0\;$} &  \lstick{$\ket{0}$} & \setwiretype{q}& & \\
+                &\setwiretype{n} \lstick{\small$1\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &&\\
+                &\setwiretype{n} \lstick{\small$2\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &\gate{X} & \rstick{\ket{1}}\\
+                &\setwiretype{n} \lstick{\small$3\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &&\\[-1em]
+                &\setwiretype{n}  &  \vdots& & &\\[-0.5em]
+                &\setwiretype{n} \lstick{\small$4\;$} & \lstick{$\ket{0}$} &\setwiretype{q}  &&
+            \end{quantikz}};
+
+        \node[above] at (quantcirc.north) {\Huge Quantum circuit};
+
+        \node (python) [below] at (board.south) {\Huge Python};
+        \node (pythoncode) [below] at (python.south) {
+            \text{\begin{minted} \end{minted}}
+        };
+        
+        
+        \end{tikzpicture}
+    \end{document}
