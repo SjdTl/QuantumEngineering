@@ -7,5 +7,10 @@
 - [Alibaba cloud API](https://github.com/alibaba/acqdp)
 
 ## Project options:
-- Algorithms (see [quantum zoo](https://quantumalgorithmzoo.org/))
-- Games (chess, connect four, tic-tac-toe)
+- Extend quantum checkers (and potentially with an ai solver)
+  *Checkers with interference:
+- Quantum routing (something like a Dijkstra algorithm)
+- Quantum machine learning
+
+## Qiskit exercises
+- [IBM challenge 2024](https://github.com/qiskit-community/ibm-quantum-challenge-2024?tab=readme-ov-file)
