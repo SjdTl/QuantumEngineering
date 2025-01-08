@@ -1,0 +1,103 @@
+% dvisvgm --pdf name
+% latexmk -C
+\documentclass[preview]{standalone}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{svg}
+\usepackage{xcolor}
+\usepackage[cache=false]{minted}
+
+\usetikzlibrary{shapes.geometric, shapes.arrows}
+\usetikzlibrary{quantikz2}
+     \tikzset{operator/.append style={fill=white!0}}
+\begin{document}
+    \begin{tikzpicture}[transform shape, every node/.append style={}, node distance = 2cm]
+        \node (board) [scale=0.46] at (0,0) {\includesvg{position1.svg}};
+        \node[above] at (board.north) {\Huge Board};
+
+        \node (quantcirc) at (9, 3) {
+            \begin{quantikz}[color=gray, scale=1.5]
+                &\setwiretype{n} \lstick{\small$0\;$} &  \lstick{$\ket{0}$} & \setwiretype{q}& & \\
+                &\setwiretype{n} \lstick{\small$1\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &&\\
+                &\setwiretype{n} \lstick{\small$2\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &\gate{X} & \rstick{\ket{1}}\\
+                &\setwiretype{n} \lstick{\small$3\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &&\\[-1em]
+                &\setwiretype{n}  &  \vdots& & &\\[-0.5em]
+                &\setwiretype{n} \lstick{\small$4\;$} & \lstick{$\ket{0}$} &\setwiretype{q}  &&
+            \end{quantikz}};
+
+        \node[above] at (quantcirc.north) {\Huge Quantum circuit};
+
+
+        \node (python) [below] at (quantcirc.south) {\Huge Python};
+        \node (boardtext) [below] at (python.south) {\Large Board};
+        \node (boardcode) [below] at (boardtext.south) {
+            \begin{tabular}{l}
+                board = [\textcolor{blue}{None}]*32 \\
+                board[2] = \{\\
+                    \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\
+                    \quad \textcolor{orange}{'probability'} : \textcolor{blue}{1}, \\
+                    \quad \textcolor{orange}{'pawn'} : \textcolor{blue}{1} \\
+                    \}
+            \end{tabular}
+        };
+        \node (quantumtext) [below] at (boardcode.south) {\Large Quantum};
+        \node (quantumcode) [below] at (quantumtext.south) {
+            \begin{tabular}{l}
+                q = QuantumRegister(10, \textcolor{orange}{'q'}) \\
+                circuit = QuantumCircuit(q)\\
+                \\
+                circuit.x(q[2])
+            \end{tabular}
+        };
+
+        % \draw[] (3.5, -7) -- +(1,0) -- +(1, -2) -- +(1.4, -2) -- +(0.5, -2.5) -- +(-0.4, -2) -- +(0, -2) -- +(0,0);
+        \node(arrow) [single arrow, draw, shape border uses incircle, minimum height = 2 cm, line width = 0.1 cm] at (4, -7.5) [shape border rotate = -90]{};
+
+        \node(left_dice) [rectangle, draw, minimum width = 1.5 cm, minimum height = 1.5 cm, rounded corners, line width = 0.15 cm] at ($(arrow.west) +(-2cm,0)$) {};
+        \node(right_dice) [rectangle, draw, minimum width = 1.5 cm, minimum height = 1.5 cm, rounded corners, line width = 0.15 cm] at ($(arrow.east) +(2cm,0)$) {};
+        \node[circle, fill] at (right_dice) {};
+        \node[circle, fill] at (left_dice) {};
+        \node[circle, fill] at ($(left_dice) + (0.35, 0.35)$) {};
+        \node[circle, fill] at ($(left_dice) + (0.35, -0.35)$) {};
+        \node[circle, fill] at ($(left_dice) + (-0.35, 0.35)$) {};
+        \node[circle, fill] at ($(left_dice) + (-0.35, -0.35)$) {};
+
+        \node (board2) [scale=0.46] at (0,-15) {\includesvg{position2.svg}};
+        \node[above] at (board2.north) {\Huge Board};
+
+        \node (quantcirc2) at (9.5, -12) {
+            \begin{quantikz}[color=gray, scale=1]
+                &\setwiretype{n} \lstick{\small$2\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &\gate{X}  & \ctrl{1} & \ctrl{3} & \gate{X}& \rstick{\ket{0}}\\
+                &\setwiretype{n} \lstick{\small$3\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &          & \targ{ } &          & \gate{H}& \rstick{$\frac{1}{\sqrt{2}}(\ket{0}+\ket{1})$} \\[-1em]
+                &\setwiretype{n}                      &  \vdots             &                &          &           &         &         & \\[-0.5em] 
+                &\setwiretype{n} \lstick{\small$7\;$} & \lstick{$\ket{0}$} &\setwiretype{q}  &          &          & \targ{ } & \gate{H}& \rstick{$\frac{1}{\sqrt{2}}(\ket{0}+\ket{1})$}
+            \end{quantikz}};
+
+        \node[above] at (quantcirc2.north) {\Huge Quantum circuit};
+
+        \node (python2) [below] at (quantcirc2.south) {\Huge Python};
+        \node (boardtext2) [below] at (python2.south) {\Large Board};
+        \node (boardcode2) [below] at (boardtext2.south) {
+            \begin{tabular}{l}
+                board[2] = \textcolor{blue}{None} \\ 
+                board[3, 7] = \{\\
+                    \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\
+                    \quad \textcolor{orange}{'probability'} : \textcolor{blue}{0.5}, \\
+                    \quad \textcolor{orange}{'pawn'} : \textcolor{blue}{1}\} \\
+                
+            \end{tabular}
+        };
+        \node (quantumtext2) [below] at (boardcode2.south) {\Large Quantum};
+        \node (quantumcode2) [below] at (quantumtext2.south) {
+            \begin{tabular}{l}
+                circuit.cx(q[2], q[3]) \\
+                circuit.cx(q[2], q[7]) \\
+                circuit.h(q[3]) \\
+                circuit.h(q[7]) \\
+                circuit.x(q[2]) \\
+            \end{tabular}
+        };
+        \end{tikzpicture}
+    \end{document}
+
+qt

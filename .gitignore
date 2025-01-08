@@ -4,6 +4,7 @@ api_key.py
 *.fls
 */svg-inkscape
 */_minted-*
+*.gz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
