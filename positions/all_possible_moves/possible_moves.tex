@@ -1,10 +1,14 @@
 \documentclass{article}
+\usepackage[margin=3pt,landscape]{geometry}
 \usepackage{tikz}
 \usepackage{amsmath}
 \usepackage{svg}
 \usepackage{xcolor}
 \usepackage[cache=false]{minted}
 \usepackage{pdflscape}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{adjustbox}
 
 
 \usetikzlibrary {arrows.meta,bending,positioning} 
@@ -18,18 +22,17 @@
 \newsavebox{\incode} 
 \newsavebox{\fmovecode}
 \newsavebox{\fmoveqiskit}
-\newsavebox{\nmovecode}
-\newsavebox{\nmoveqiskit}
+\newsavebox{\smovecode}
+\newsavebox{\smoveqiskit}
 \newsavebox{\ffcapturecode}
 \newsavebox{\ffcaptureqiskit}
-
 
 
 \begin{document}
 
 % Save tabular in a box
 \savebox{\fmovecode}{%
-    \begin{tabular}{l}
+    \begin{tabular}[t]{l}
         board[i] = \textcolor{blue}{None} \\ 
         board[i+d1, i+d2] = \{\\
             \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\
@@ -39,7 +42,7 @@
 }
 
 \savebox{\incode}{%
-\begin{tabular}{l} 
+\begin{tabular}[t]{l} 
     board[i] = \{\\ 
         \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\ 
         \quad \textcolor{orange}{'probability'} : \textcolor{blue}{1}, \\ 
@@ -49,82 +52,69 @@
 }
 
 \savebox{\fmoveqiskit}{%
-    \begin{tabular}{l} 
-        circuit.cx(q[i], q[i+d1]) \\
-        circuit.cx(q[i], q[i+d1]) \\
-        circuit.h(q[i+d1]) \\
-        circuit.h(q[i+d2]) \\
-        circuit.x(q[i])
+    \begin{tabular}[t]{l} 
+        circuit.ch(q[i], q[i+d1]) \\
+        circuit.swap(q[i], q[i+d2]) \\
+        circuit.cx(q[i+d1], q[i+d2])
     \end{tabular}
 }
 
-\savebox{\nmovecode}{%
-    \begin{tabular}{l}
-        board[i] = \textcolor{blue}{None} \\ 
-        board[i+d1, i+d2] = \{\\
-            \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\
-            \quad \textcolor{orange}{'probability'} : $\mathcolor{blue}{(1/2)^n}$, \\
+\savebox{\smovecode}{%
+    \begin{tabular}[t]{l}
+        board[i, j] = \textcolor{blue}{None} \\ 
+        board[$i+d_{1,2}, j+d_{1,2}$]\\
+        = \{\textcolor{orange}{'color'} : \textcolor{blue}{red}, \\
+            \quad \textcolor{orange}{'probability'} : \textcolor{blue}{0.25}, \\
             \quad \textcolor{orange}{'pawn'} : \textcolor{blue}{1}\} \\
     \end{tabular}
 }
 
-\savebox{\nmoveqiskit}{%
-\begin{tabular}{l} 
-    circuit.h(q[i]) \\
-    circuit.cx(q[i], q[i+d1]) \\
-    circuit.cx(q[i], q[i+d1]) \\
-    circuit.h(q[i+d1]) \\
-    circuit.h(q[i+d2]) \\
-    circuit.x(q[i])
+\savebox{\smoveqiskit}{%
+\begin{tabular}[t]{l} 
+    circuit.ch(q[i], q[i+d1]) \\
+    circuit.ch(q[j], q[j+d1]) \\
+    circuit.swap(q[i], q[i+d2]) \\
+    circuit.swap(q[j], q[j+d2]) \\
+    circuit.cx(q[i+d1], q[i+d2]) \\
+    circuit.cx(q[j+d1], q[j+d2])
 \end{tabular}
 }
 
 \savebox{\ffcapturecode}{%
-    \begin{tabular}{l}
+    \begin{tabular}[t]{l}
         board[i] = \textcolor{blue}{None} \\ 
         board[i+d1, i+d2+1] = \{\\
             \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\
-            \quad \textcolor{orange}{'probability'} : $\mathcolor{blue}{(1/2)^n}$, \\
+            \quad \textcolor{orange}{'probability'} : $\mathcolor{blue}{(1/2)}$, \\
             \quad \textcolor{orange}{'pawn'} : \textcolor{blue}{1}\} \\
     \end{tabular}
 }
 
 \savebox{\ffcaptureqiskit}{%
-\begin{tabular}{l} 
-    circuit.h(q[i]) \\
-    circuit.cx(q[i], q[i+d1]) \\
-    circuit.cx(q[i], q[i+d1]) \\
-    circuit.h(q[i+d1]) \\
-    circuit.h(q[i+d2]) \\
-    circuit.x(q[i])
+\begin{tabular}[t]{l} 
+    circuit.ch(q[i], q[i+d1]) \\
+    circuit.swap(q[i], q[i+d2]) \\
+    circuit.cx(q[i+d1], q[i+d2]) \\
+    circuit.cx(q[i+d2+1], q[i+d2])
 \end{tabular}
 }
 
-    \begin{landscape}
         \begin{center}
-            \begin{tabular}{||c c c c c||} 
+            \begin{longtable}[t]{||p{5em} p{15em} p{10em} p{25em} p{14em}||} 
             \hline
             Move name & Move & Python list & Quantum array & Qiskit \\ [0.5ex] 
             \hline\hline
-            Initialize & \input{moves/initialize.tex} & $\text{board=[\textcolor{blue}{None}] * 32}$ & \input{moves/initialize_q.tex} &  \begin{tabular}{l} q = QuantumRegister(10, \textcolor{orange}{'q'}) \\ circuit = QuantumCircuit(q)\end{tabular} \\ [1ex]
+            \raggedright \adjustbox{valign=b}{Initialize} & \adjustbox{valign=b}{\input{moves/initialize.tex}} & \adjustbox{valign=b}{$\text{board=[\textcolor{blue}{None}] * 32}$} & \adjustbox{valign=b}{\input{moves/initialize_q.tex}} &  \adjustbox{valign=b}{\begin{tabular}{l} q = QuantumRegister(10, \textcolor{orange}{'q'}) \\ circuit = QuantumCircuit(q)\end{tabular}} \\ [1ex]
             \hline
-            New pawn & \input{moves/new_pawn.tex} & \usebox{\incode} & \input{moves/new_pawn_q.tex} & circuit.x[q[i]] \\
+            \adjustbox{valign=b}{New pawn} & \adjustbox{valign=b}{\input{moves/new_pawn.tex}} & \adjustbox{valign=b}{\usebox{\incode}} & \adjustbox{valign=b}{\input{moves/new_pawn_q.tex}} & \adjustbox{valign=b}{circuit.x[q[i]]} \\
             \hline
-            First move & \input{moves/first_move.tex} & \usebox{\fmovecode} & \input{moves/first_move_q.tex} & \usebox{\fmoveqiskit} \\
+            \adjustbox{valign=b}{First move} & \adjustbox{valign=b}{\input{moves/first_move.tex}} & \adjustbox{valign=b}{\usebox{\fmovecode}} & \adjustbox{valign=b}{\input{moves/first_move_q.tex}} & \adjustbox{valign=b}{\usebox{\fmoveqiskit}} \\
             \hline
-            nth move & \input{moves/pth_move.tex} & \usebox{\nmovecode} & \input{moves/pth_move_q.tex} & \usebox{\nmoveqiskit} \\
+            \adjustbox{valign=b}{Second move} & \adjustbox{valign=b}{\input{moves/second_move.tex}}& \adjustbox{valign=b}{\usebox{\smovecode}} & \adjustbox{valign=b}{\input{moves/second_move_q.tex}} & \adjustbox{valign=b}{\usebox{\smoveqiskit}} \\
             \hline
-            \end{tabular}
-        \end{center}
-        \begin{center}
-            \begin{tabular}{||c c c c c||} 
+            \adjustbox{valign=b}{full-full capture} & \adjustbox{valign=b}{\input{moves/ff_capture.tex}} & \adjustbox{valign=b}{\usebox{\ffcapturecode}} &\adjustbox{valign=b}{\input{moves/ff_capture_q.tex}} & \adjustbox{valign=b}{\usebox{\ffcaptureqiskit}} \\
             \hline
-            Move name & Move & Python list & Quantum array & Qiskit \\ [0.5ex] 
-            \hline\hline
-            full-full capture & \input{moves/ff_capture.tex} & \usebox{\ffcapturecode} & \input{moves/ff_capture_q.tex} & \usebox{\ffcaptureqiskit} \\
-            \hline
-            \end{tabular}
+            \end{longtable}
         \end{center}
 
-    \end{landscape}
 \end{document}

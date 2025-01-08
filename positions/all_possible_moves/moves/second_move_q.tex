@@ -1,0 +1,8 @@
+\begin{quantikz}[scale=1]
+    \lstick[wires=2]{$\ket{10}_{ij}+\ket{01}_{ij}$}        & \ctrl{2} & \ctrl{4} & \swap{3}     &              &            & \rstick{\ket{0}}\\
+                                                           &          &          &              & \swap{4}     &            & \rstick{\ket{0}}\\
+    \lstick{$\ket{0}_{i+d_1}$}                             & \gate{H} &          &              &              & \ctrl{1}   & \rstick[wires=4]{\begin{tabular}[t]{l} \ket{1000} \\ +\ket{0100} \\ +\ket{0010} \\ +\ket{0001} \end{tabular}}\\
+    \lstick{$\ket{0}_{i+d_2}$}                             &          &          & \swap{-3}    &              & \targ{-1}  &                 \\
+    \lstick{$\ket{0}_{j+d_1}$}                             &          & \gate{H} &              &              & \ctrl{1}   &                 \\
+    \lstick{$\ket{0}_{j+d_2}$}                             &          &          &              & \swap{-4}    & \targ{-1}  &
+\end{quantikz}
