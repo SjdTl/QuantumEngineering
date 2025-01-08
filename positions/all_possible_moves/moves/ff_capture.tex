@@ -1,0 +1,12 @@
+\begin{tikzpicture}
+    \def\d{1.4}
+    \def\size{1.1}
+    \node(c1) [circle, draw, minimum size = \size cm, pattern={horizontal lines},pattern color=red] at (\d * 0,0) {\tiny i};
+    \node(c2) [circle, draw, minimum size = \size cm, fill = red!50] at (\d * 1,0) {\tiny i+d1};
+    \node(c3) [circle, draw, minimum size = \size cm, fill = green] at (\d * 2,0) {\tiny i+d2};
+    \node(c4) [circle, draw, minimum size = \size cm, fill =red!50] at (\d * 3,0) {\tiny i+d2+1};
+
+    \draw[draw, thick, -{Stealth[length=2mm]}]
+    (c1) edge [bend left=45] node[pos=0.5, above, rectangle, draw, minimum width = 0.75 cm, minimum height = 0.75 cm, rounded corners, line width = 0.1 cm, yshift=0.2cm] {d1} (c2)
+    (c1) edge [bend right=45] node[pos=0.5, below, rectangle, draw, minimum width = 0.75 cm, minimum height = 0.75 cm, rounded corners, line width = 0.1 cm, yshift=-0.2cm] {d2} (c3);
+\end{tikzpicture}

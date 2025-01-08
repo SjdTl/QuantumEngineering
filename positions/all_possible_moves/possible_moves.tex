@@ -20,6 +20,8 @@
 \newsavebox{\fmoveqiskit}
 \newsavebox{\nmovecode}
 \newsavebox{\nmoveqiskit}
+\newsavebox{\ffcapturecode}
+\newsavebox{\ffcaptureqiskit}
 
 
 
@@ -77,6 +79,27 @@
 \end{tabular}
 }
 
+\savebox{\ffcapturecode}{%
+    \begin{tabular}{l}
+        board[i] = \textcolor{blue}{None} \\ 
+        board[i+d1, i+d2+1] = \{\\
+            \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\
+            \quad \textcolor{orange}{'probability'} : $\mathcolor{blue}{(1/2)^n}$, \\
+            \quad \textcolor{orange}{'pawn'} : \textcolor{blue}{1}\} \\
+    \end{tabular}
+}
+
+\savebox{\ffcaptureqiskit}{%
+\begin{tabular}{l} 
+    circuit.h(q[i]) \\
+    circuit.cx(q[i], q[i+d1]) \\
+    circuit.cx(q[i], q[i+d1]) \\
+    circuit.h(q[i+d1]) \\
+    circuit.h(q[i+d2]) \\
+    circuit.x(q[i])
+\end{tabular}
+}
+
     \begin{landscape}
         \begin{center}
             \begin{tabular}{||c c c c c||} 
@@ -90,7 +113,18 @@
             First move & \input{moves/first_move.tex} & \usebox{\fmovecode} & \input{moves/first_move_q.tex} & \usebox{\fmoveqiskit} \\
             \hline
             nth move & \input{moves/pth_move.tex} & \usebox{\nmovecode} & \input{moves/pth_move_q.tex} & \usebox{\nmoveqiskit} \\
+            \hline
             \end{tabular}
         \end{center}
+        \begin{center}
+            \begin{tabular}{||c c c c c||} 
+            \hline
+            Move name & Move & Python list & Quantum array & Qiskit \\ [0.5ex] 
+            \hline\hline
+            full-full capture & \input{moves/ff_capture.tex} & \usebox{\ffcapturecode} & \input{moves/ff_capture_q.tex} & \usebox{\ffcaptureqiskit} \\
+            \hline
+            \end{tabular}
+        \end{center}
+
     \end{landscape}
 \end{document}
