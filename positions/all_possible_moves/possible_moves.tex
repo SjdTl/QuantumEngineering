@@ -1,0 +1,96 @@
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{svg}
+\usepackage{xcolor}
+\usepackage[cache=false]{minted}
+\usepackage{pdflscape}
+
+
+\usetikzlibrary {arrows.meta,bending,positioning} 
+
+\usetikzlibrary{shapes.geometric, shapes.arrows}
+\usetikzlibrary{patterns}
+\usetikzlibrary{quantikz2}
+     \tikzset{operator/.append style={fill=white!0}}
+
+
+\newsavebox{\incode} 
+\newsavebox{\fmovecode}
+\newsavebox{\fmoveqiskit}
+\newsavebox{\nmovecode}
+\newsavebox{\nmoveqiskit}
+
+
+
+\begin{document}
+
+% Save tabular in a box
+\savebox{\fmovecode}{%
+    \begin{tabular}{l}
+        board[i] = \textcolor{blue}{None} \\ 
+        board[i+d1, i+d2] = \{\\
+            \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\
+            \quad \textcolor{orange}{'probability'} : \textcolor{blue}{0.5}, \\
+            \quad \textcolor{orange}{'pawn'} : \textcolor{blue}{1}\} \\
+    \end{tabular}
+}
+
+\savebox{\incode}{%
+\begin{tabular}{l} 
+    board[i] = \{\\ 
+        \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\ 
+        \quad \textcolor{orange}{'probability'} : \textcolor{blue}{1}, \\ 
+        \quad \textcolor{orange}{'pawn'} : \textcolor{blue}{1} 
+        \} 
+    \end{tabular}
+}
+
+\savebox{\fmoveqiskit}{%
+    \begin{tabular}{l} 
+        circuit.cx(q[i], q[i+d1]) \\
+        circuit.cx(q[i], q[i+d1]) \\
+        circuit.h(q[i+d1]) \\
+        circuit.h(q[i+d2]) \\
+        circuit.x(q[i])
+    \end{tabular}
+}
+
+\savebox{\nmovecode}{%
+    \begin{tabular}{l}
+        board[i] = \textcolor{blue}{None} \\ 
+        board[i+d1, i+d2] = \{\\
+            \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\
+            \quad \textcolor{orange}{'probability'} : $\mathcolor{blue}{(1/2)^n}$, \\
+            \quad \textcolor{orange}{'pawn'} : \textcolor{blue}{1}\} \\
+    \end{tabular}
+}
+
+\savebox{\nmoveqiskit}{%
+\begin{tabular}{l} 
+    circuit.h(q[i]) \\
+    circuit.cx(q[i], q[i+d1]) \\
+    circuit.cx(q[i], q[i+d1]) \\
+    circuit.h(q[i+d1]) \\
+    circuit.h(q[i+d2]) \\
+    circuit.x(q[i])
+\end{tabular}
+}
+
+    \begin{landscape}
+        \begin{center}
+            \begin{tabular}{||c c c c c||} 
+            \hline
+            Move name & Move & Python list & Quantum array & Qiskit \\ [0.5ex] 
+            \hline\hline
+            Initialize & \input{moves/initialize.tex} & $\text{board=[\textcolor{blue}{None}] * 32}$ & \input{moves/initialize_q.tex} &  \begin{tabular}{l} q = QuantumRegister(10, \textcolor{orange}{'q'}) \\ circuit = QuantumCircuit(q)\end{tabular} \\ [1ex]
+            \hline
+            New pawn & \input{moves/new_pawn.tex} & \usebox{\incode} & \input{moves/new_pawn_q.tex} & circuit.x[q[i]] \\
+            \hline
+            First move & \input{moves/first_move.tex} & \usebox{\fmovecode} & \input{moves/first_move_q.tex} & \usebox{\fmoveqiskit} \\
+            \hline
+            nth move & \input{moves/pth_move.tex} & \usebox{\nmovecode} & \input{moves/pth_move_q.tex} & \usebox{\nmoveqiskit} \\
+            \end{tabular}
+        \end{center}
+    \end{landscape}
+\end{document}

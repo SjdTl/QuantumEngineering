@@ -8,9 +8,14 @@
 \usepackage[cache=false]{minted}
 
 \usetikzlibrary{shapes.geometric, shapes.arrows}
+\usetikzlibrary {patterns,patterns.meta} 
 \usetikzlibrary{quantikz2}
      \tikzset{operator/.append style={fill=white!0}}
 \begin{document}
+
+
+
+
     \begin{tikzpicture}[transform shape, every node/.append style={}, node distance = 2cm]
         \node (board) [scale=0.46] at (0,0) {\includesvg{position1.svg}};
         \node[above] at (board.north) {\Huge Board};
@@ -99,5 +104,3 @@
         };
         \end{tikzpicture}
     \end{document}
-
-qt
