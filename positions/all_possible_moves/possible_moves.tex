@@ -26,6 +26,8 @@
 \newsavebox{\smoveqiskit}
 \newsavebox{\ffcapturecode}
 \newsavebox{\ffcaptureqiskit}
+\newsavebox{\fhcapturecode}
+\newsavebox{\fhcaptureqiskit}
 
 
 \begin{document}
@@ -99,8 +101,28 @@
 \end{tabular}
 }
 
+\savebox{\fhcapturecode}{%
+    \begin{tabular}[t]{l}
+        board[i, j] = \textcolor{blue}{None} \\ 
+        board[$i+d_{12}, j+d_1$,\\
+            \quad $j+d_1+1$] = \{\\
+            \quad \textcolor{orange}{'color'} : \textcolor{blue}{red}, \\
+            \quad \textcolor{orange}{'probability'} : $\mathcolor{blue}{1/4}$, \\
+            \quad \textcolor{orange}{'pawn'} : \textcolor{blue}{1}\} \\
+    \end{tabular}
+}
+
+\savebox{\fhcaptureqiskit}{%
+\begin{tabular}[t]{l} 
+    circuit.ch(q[i], q[i+d1]) \\
+    circuit.swap(q[i], q[i+d2]) \\
+    circuit.cx(q[i+d1], q[i+d2]) \\
+    circuit.cx(q[i+d2+1], q[i+d2])
+\end{tabular}
+}
+
         \begin{center}
-            \begin{longtable}[t]{||p{5em} p{15em} p{10em} p{25em} p{14em}||} 
+            \begin{longtable}[t]{||p{5em} p{15em} p{8em} p{29em} p{14em}||} 
             \hline
             Move name & Move & Python list & Quantum array & Qiskit \\ [0.5ex] 
             \hline\hline
@@ -113,6 +135,8 @@
             \adjustbox{valign=b}{Second move} & \adjustbox{valign=b}{\input{moves/second_move.tex}}& \adjustbox{valign=b}{\usebox{\smovecode}} & \adjustbox{valign=b}{\input{moves/second_move_q.tex}} & \adjustbox{valign=b}{\usebox{\smoveqiskit}} \\
             \hline
             \adjustbox{valign=b}{full-full capture} & \adjustbox{valign=b}{\input{moves/ff_capture.tex}} & \adjustbox{valign=b}{\usebox{\ffcapturecode}} &\adjustbox{valign=b}{\input{moves/ff_capture_q.tex}} & \adjustbox{valign=b}{\usebox{\ffcaptureqiskit}} \\
+            \hline
+            \adjustbox{valign=b}{1 half-half capture} & \adjustbox{valign=b}{\input{moves/fh_capture.tex}} & \adjustbox{valign=b}{\usebox{\fhcapturecode}} &\adjustbox{valign=b}{\input{moves/fh_capture_q.tex}} & \adjustbox{valign=b}{\usebox{\fhcaptureqiskit}} \\
             \hline
             \end{longtable}
         \end{center}
