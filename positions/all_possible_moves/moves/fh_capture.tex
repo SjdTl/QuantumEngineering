@@ -2,11 +2,11 @@
     \def\d{1.4}
     \def\w{1.6}
     \def\size{1.1}
-    \node(c1) [circle, draw, minimum size = \size cm, pattern={horizontal lines},pattern color=red!75] at (\d * 0,0) {\tiny i};
+    \node(c1) [circle, draw, minimum size = \size cm, fill=red!50] at (\d * 0,0) {\tiny i};
     \node(c2) [circle, draw, minimum size = \size cm, pattern={horizontal lines},pattern color=red!75] at (\d * \w,0) {\tiny j};
-    \node(c3) [circle, draw, minimum size = \size cm, fill = red!40] at (\d * 0,-\d *1) {\tiny i+d1};
+    \node(c3) [circle, draw, minimum size = \size cm] at (\d * 0,-\d *1) {\tiny i+d1};
     \node(c4) [circle, draw, minimum size = \size cm, fill = green!50] at (\d * 0,-\d *2) {\tiny k};
-    \node(c5) [circle, draw, minimum size = \size cm, fill = red!40] at (\d * 0,-\d*3) {\tiny i+d2};
+    \node(c5) [circle, draw, minimum size = \size cm] at (\d * 0,-\d*3) {\tiny i+d2};
     \node(c6) [circle, draw, minimum size = \size cm, fill = red!40] at (\d * \w,-\d*1) {\tiny j+d1};
     \node(c7) [circle, draw, minimum size = \size cm, fill = green!50] at (\d * \w, -\d * 2) {\tiny j+d2};
     \node(c8) [circle, draw, minimum size = \size cm, fill = red!40] at (\d * \w, -\d * 3) {\tiny j+d2+1};
@@ -14,8 +14,6 @@
 
 
     \draw[draw, thick, -{Stealth[length=2mm]}]
-    (c1) edge [bend right=45] node[pos=0.5, left, rectangle, draw, minimum width = 0.75 cm, minimum height = 0.75 cm, rounded corners, line width = 0.1 cm, xshift=-0.2cm] {d1} (c3)
-    (c1) edge [bend left=35] node[pos=0.8, right, rectangle, draw, minimum width = 0.75 cm, minimum height = 0.75 cm, rounded corners, line width = 0.1 cm, xshift=0.1cm, yshift=-0.2cm] {d2} (c5)
     (c2) edge [bend right=45] node[pos=0.3, left, rectangle, draw, minimum width = 0.75 cm, minimum height = 0.75 cm, rounded corners, line width = 0.1 cm, xshift=-0.1cm, yshift=0.2cm] {d1} (c6)
     (c2) edge [bend left=45] node[pos=0.5, right, rectangle, draw, minimum width = 0.75 cm, minimum height = 0.75 cm, rounded corners, line width = 0.1 cm, xshift=0.2cm] {d2} (c7);
 
