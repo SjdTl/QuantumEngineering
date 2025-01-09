@@ -1,6 +1,8 @@
 \begin{quantikz}[scale=1]
-    \lstick[wires=2]{$\ket{10}_{ij}+\ket{01}_{ij}$}        &  &     &           &\rstick[wires=4]{\begin{tabular}[t]{l} $\sqrt{2}$\ket{1000}\\ + \ket{0001}\\ + \ket{0010}  \end{tabular}}\\
-                                                           & \ctrl{1} & \swap{2}  &           & \\
-    \lstick{$\ket{0}_{j+d_1}$}                             & \gate{H} &             & \ctrl{1}  & \\
-    \lstick{$\ket{0}_{j+d_2}$}                             &          & \swap{-2}   & \targ{-1} &
+    \lstick[wires=2]{$\ket{10}_{ij}+\ket{01}_{ij}$}        &  &     &           & &\rstick[wires=6]{\begin{tabular}[t]{l} $\sqrt{2}$\ket{100010} \\ + $\sqrt{2}$\ket{100001} \\ + \ket{001010} \\ + \ket{001001} \\ + \ket{000110} \\+ \ket{000100}  \end{tabular}}&\\
+                                                           & \ctrl{1} & \swap{2}  &           & &\\
+    \lstick{$\ket{0}_{j+d_1}$}                             & \gate{H} &             & \ctrl{1}  & &\\
+    \lstick{$\ket{0}_{j+d_2}$}                             &          & \swap{-2}   & \targ{-1} & \ctrl{2} & \\
+    \lstick[wires=2]{$\ket{10}_{k,j+d_2}+\ket{01}_{k,j+d_2}$}&         &             & \gate{X} & \ctrl{1} & \gate{X}\\ 
+                                                           &          &             &    & \targ{ } &
 \end{quantikz}
