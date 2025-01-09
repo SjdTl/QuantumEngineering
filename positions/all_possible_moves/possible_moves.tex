@@ -28,6 +28,8 @@
 \newsavebox{\ffcaptureqiskit}
 \newsavebox{\fhcapturecode}
 \newsavebox{\fhcaptureqiskit}
+\newsavebox{\mcode}
+\newsavebox{\mqiskit}
 
 
 \begin{document}
@@ -121,6 +123,24 @@
 \end{tabular}
 }
 
+
+\savebox{\mcode}{%
+    \begin{tabular}[t]{l}
+        for i in range(0,c.len()):\\
+            \quad if c[i] == 0:\\
+            \quad\quad board[i] = None\\
+            \quad else:\\
+            \quad\quad board[i]['probability'] = 1\\
+    \end{tabular}
+}
+
+\savebox{\mqiskit}{%
+\begin{tabular}[t]{l} 
+    for ($q_i,c_i$) in zip(q,c): \\
+        circuit.measure($q_i,c_i$)
+\end{tabular}
+}
+
         \begin{center}
             \begin{longtable}[t]{||p{5em} p{15em} p{8em} p{29em} p{14em}||} 
             \hline
@@ -137,6 +157,8 @@
             \adjustbox{valign=b}{full-full capture} & \adjustbox{valign=b}{\input{moves/ff_capture.tex}} & \adjustbox{valign=b}{\usebox{\ffcapturecode}} &\adjustbox{valign=b}{\input{moves/ff_capture_q.tex}} & \adjustbox{valign=b}{\usebox{\ffcaptureqiskit}} \\
             \hline
             \adjustbox{valign=b}{1 half-half capture} & \adjustbox{valign=b}{\input{moves/fh_capture.tex}} & \adjustbox{valign=b}{\usebox{\fhcapturecode}} &\adjustbox{valign=b}{\input{moves/fh_capture_q.tex}} & \adjustbox{valign=b}{\usebox{\fhcaptureqiskit}} \\
+            \hline
+            \adjustbox{valign=b}{Measure}           &                                                   & \adjustbox{valign=b}{\usebox{\mcode}} & \adjustbox{valign=b}{\input{moves/measure_move_q.tex}} & \adjustbox{valign=b}{\usebox{\mqiskit}} \\
             \hline
             \end{longtable}
         \end{center}
