@@ -10,6 +10,28 @@ from qiskit_aer import AerSimulator
 
 
 class circuit():
+    """
+    Description
+    -----------
+    Class containg the quantum circuit that is slowly updated with every move
+
+    ----------
+    N : int
+        Size of the quantum circuit
+    
+    Returns
+    -------
+    new_positions : list[int]
+        List of integers with indeces where the pawns remain when calling circuit.measure()
+
+    Example
+    -------
+    qc = circuit()
+    qc.new_pawn([5,3,29])
+    qc.measure()
+
+    >>> [3,5,29]
+    """
     def __init__(self, N=32):
         self.qcircuit = QuantumCircuit(N)
 
@@ -22,7 +44,7 @@ class circuit():
         Parameters
         ----------
         move_to : List[int]
-            List of one integer : the position to move to
+            List of integer(s) : the position to move to
 
         Raises
         ------
@@ -115,19 +137,38 @@ class circuit():
         
         Examples
         --------
-        >>>
+        qc = circuit(N=6)\\
+        qc.move([0],[2, 3]) # move green 0 -> 2 & 3\\ 
+        qc.move([1], [4, 5]) # move red 1 -> 4 & 5, but capture green since red actually came on top of 3\\
+        qc.capture([4], [3], [2]) # reds 4 captures greens 3 that is connected to 2 \\
+        qc.draw()
+
+        >>> q_0 (initial green):         ──■────────X──────────────────────── |0>
+        >>>                                │        │
+        >>> q_1 (initial red):           ──┼────■───┼──X───────────────────── |0>
+        >>>                              ┌─┴─┐  │   │  │      ┌───┐     ┌───┐
+        >>> q_2 (0.5 green):             ┤ H ├──┼───┼──┼───■──┤ X ├──■──┤ X ├ 
+        >>>                              └───┘  │   │  │ ┌─┴─┐└───┘┌─┴─┐└───┘ 
+        >>> q_3 (0.5 green and captive): ───────┼───X──┼─┤ X ├─────┤ X ├───── 
+        >>>                                   ┌─┴─┐    │ └───┘     └─┬─┘
+        >>> q_4 (0.5 red and capturer):  ─────┤ H ├────┼───■─────────■───────
+        >>>                                   └───┘    │ ┌─┴─┐
+        >>> q_5 (0.5 red):               ──────────────X─┤ X ├───────────────
+        >>>                                              └───┘
         """
         if len(capturer) != 1 or len(captive) != 1:
             raise ValueError("capturer or captive must be in the from [int]; a list containing one integer")
         if captive[0] in captive_entanglement:
             raise ValueError("the captive_entanglement also contains the captive, this should not be the case please look at the documentation")
         
-        for captive_entagled in captive_entanglement:
-            self.qc.x(captive_entagled)
+        for captive_entangled in captive_entanglement:
+            self.qcircuit.x(captive_entangled)
         
-        self.
-
+        self.qcircuit.mcx(captive_entanglement+capturer, captive[0])
     
+        for captive_entangled in captive_entanglement:
+            self.qcircuit.x(captive_entangled)
+
     
     def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True):
         """
@@ -167,9 +208,12 @@ class circuit():
             sampler = Sampler(mode = AerSimulator())
 
         job = sampler.run(pubs=[pub])
-        result = job.result()
-        data = result[0].data.evs
-        print(data)
+        result = job.result()[0]
+        data = result.data.meas.get_counts()
+
+        output = max(data, key=data.get)
+        indices_of_ones = [index for index, char in enumerate(output[::-1]) if char == '1']
+        print(indices_of_ones)
 
     def draw(self):
         """
@@ -184,7 +228,7 @@ class circuit():
 
 
 if __name__ == "__main__":
-    qc = circuit(N=3)
-    qc.move([0], [1,2])
-    qc.draw()
+    qc = circuit()
+    qc.new_pawn([5,3])
+    qc.measure()
 
