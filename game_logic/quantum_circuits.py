@@ -205,16 +205,18 @@ class circuit():
 
         return new_positions
     
-    def draw(self):
+    def draw(self, mpl_open = True, term_draw = True):
         """
         Description
         ------------
-        Test function that draws the circuit and opens it in matplotlib
-        Also prints the circuit in the terminal
+        Test function that draws the circuit and opens it in matplotlib if mpl_open == True
+        Also prints the circuit in the terminal if term_draw == True
         """
         self.qcircuit.draw('mpl')
-        plt.show()
-        print(self.qcircuit)
+        if mpl_open == True:
+            plt.show()
+        if term_draw ==True:
+            print(self.qcircuit)
 
     def _internal_measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True):
         """See circuit.measure() for documentation"""
@@ -238,10 +240,14 @@ class circuit():
 
 
 if __name__ == "__main__":
-    qc = circuit(N=6)
+    qc = circuit(N=30)
     qc.new_pawn([0,1])
     qc.move([0],[2, 3]) # move green 0 -> 2 & 3\\ 
-    qc.move([1], [4, 5]) # move red 1 -> 4 & 5, but capture green since red actually came on top of 3\\
-    qc.capture([4], [3], [2]) # reds 4 captures greens 3 that is connected to 2 \\
-    qc.draw()
-    print(qc._internal_measure())
+    # qc.move([1], [4, 5]) # move red 1 -> 4 & 5, but capture green since red actually came on top of 3\\
+    # qc.capture([4], [3], [2]) # reds 4 captures greens 3 that is connected to 2 \\
+    qc.draw(mpl_open=False)
+    print(qc._internal_measure(optimization_level=3))
+
+    def testing():
+        dksjf
+    
