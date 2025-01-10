@@ -138,6 +138,7 @@ class circuit():
         Examples
         --------
         qc = circuit(N=6)\\
+        qc.new_pawn([0, 1])\\
         qc.move([0],[2, 3]) # move green 0 -> 2 & 3\\ 
         qc.move([1], [4, 5]) # move red 1 -> 4 & 5, but capture green since red actually came on top of 3\\
         qc.capture([4], [3], [2]) # reds 4 captures greens 3 that is connected to 2 \\
@@ -196,6 +197,27 @@ class circuit():
         the circuit is compiled, while the simulator value makes sure that for the simulation itself a 'perfect' simulation is used,
         namely the AerSimulator(), because the normal fakesimulators can not simulate this many bits
         """
+        
+        out_with_freq = self._internal_measure(backend = backend, optimization_level=optimization_level, simulator = simulator)
+        most_freq_out = max(out_with_freq, key=out_with_freq.get)
+        new_positions = [index for index, char in enumerate(most_freq_out[::-1]) if char == '1']
+
+        return new_positions
+    
+    def draw(self):
+        """
+        Description
+        ------------
+        Test function that draws the circuit and opens it in matplotlib
+        Also prints the circuit in the terminal
+        """
+        self.qcircuit.draw('mpl')
+        plt.show()
+        print(self.qcircuit)
+
+    def _internal_measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True):
+        """See circuit.measure() for documentation"""
+
         self.qcircuit.measure_all()
 
         pm = generate_preset_pass_manager(backend=backend, optimization_level=optimization_level)
@@ -209,26 +231,16 @@ class circuit():
 
         job = sampler.run(pubs=[pub])
         result = job.result()[0]
-        data = result.data.meas.get_counts()
+        out_with_freq = result.data.meas.get_counts()
 
-        output = max(data, key=data.get)
-        indices_of_ones = [index for index, char in enumerate(output[::-1]) if char == '1']
-        print(indices_of_ones)
-
-    def draw(self):
-        """
-        Description
-        ------------
-        Test function that draws the circuit and opens it in matplotlib
-        Also prints the circuit in the terminal
-        """
-        self.qcircuit.draw('mpl')
-        plt.show()
-        print(self.qcircuit)
+        return out_with_freq
 
 
 if __name__ == "__main__":
-    qc = circuit()
-    qc.new_pawn([5,3])
-    qc.measure()
-
+    qc = circuit(N=6)
+    qc.new_pawn([0,1])
+    qc.move([0],[2, 3]) # move green 0 -> 2 & 3\\ 
+    qc.move([1], [4, 5]) # move red 1 -> 4 & 5, but capture green since red actually came on top of 3\\
+    qc.capture([4], [3], [2]) # reds 4 captures greens 3 that is connected to 2 \\
+    qc.draw()
+    print(qc._internal_measure())
