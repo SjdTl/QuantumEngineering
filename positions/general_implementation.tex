@@ -21,13 +21,12 @@
         \node[above] at (board.north) {\Huge Board};
 
         \node (quantcirc) at (9, 3) {
-            \begin{quantikz}[color=gray, scale=1.5]
-                &\setwiretype{n} \lstick{\small$0\;$} &  \lstick{$\ket{0}$} & \setwiretype{q}& & \\
-                &\setwiretype{n} \lstick{\small$1\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &&\\
-                &\setwiretype{n} \lstick{\small$2\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &\gate{X} & \rstick{\ket{1}}\\
-                &\setwiretype{n} \lstick{\small$3\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &&\\[-1em]
+            \begin{quantikz}[scale=1.5]
+                \lstick{$\ket{0}_0$} & \setwiretype{q}& & \\
+                \lstick{$\ket{0}_1$} &\setwiretype{q} &&\\
+                \lstick{$\ket{0}_2$} &\setwiretype{q} &\gate{X} & \rstick{\ket{1}}\\[-1em]
                 &\setwiretype{n}  &  \vdots& & &\\[-0.5em]
-                &\setwiretype{n} \lstick{\small$4\;$} & \lstick{$\ket{0}$} &\setwiretype{q}  &&
+                \lstick{$\ket{0}_{31}$} &\setwiretype{q}  &&
             \end{quantikz}};
 
         \node[above] at (quantcirc.north) {\Huge Quantum circuit};
@@ -48,7 +47,7 @@
         \node (quantumtext) [below] at (boardcode.south) {\Large Quantum};
         \node (quantumcode) [below] at (quantumtext.south) {
             \begin{tabular}{l}
-                q = QuantumRegister(10, \textcolor{orange}{'q'}) \\
+                q = QuantumRegister(32, \textcolor{orange}{'q'}) \\
                 circuit = QuantumCircuit(q)\\
                 \\
                 circuit.x(q[2])
@@ -71,11 +70,11 @@
         \node[above] at (board2.north) {\Huge Board};
 
         \node (quantcirc2) at (9.5, -12) {
-            \begin{quantikz}[color=gray, scale=1]
-                &\setwiretype{n} \lstick{\small$2\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &\gate{X}  & \ctrl{1} & \ctrl{3} & \gate{X}& \rstick{\ket{0}}\\
-                &\setwiretype{n} \lstick{\small$3\;$} &  \lstick{$\ket{0}$} &\setwiretype{q} &          & \targ{ } &          & \gate{H}& \rstick{$\frac{1}{\sqrt{2}}(\ket{0}+\ket{1})$} \\[-1em]
-                &\setwiretype{n}                      &  \vdots             &                &          &           &         &         & \\[-0.5em] 
-                &\setwiretype{n} \lstick{\small$7\;$} & \lstick{$\ket{0}$} &\setwiretype{q}  &          &          & \targ{ } & \gate{H}& \rstick{$\frac{1}{\sqrt{2}}(\ket{0}+\ket{1})$}
+            \begin{quantikz}[scale=1]
+                  \lstick{$\ket{0}_2$} &\gate{X}  &\ctrl{1}  & \swap{3} &         & \rstick{\ket{0}}\\
+                   \lstick{$\ket{0}_3$} & &\gate{H}  &          &\ctrl{2} & \rstick[wires=3]{$\ket{01}+\ket{10}$} \\[-1em]
+                   \setwiretype{n} &\vdots             &                &          &          &         & \\[-0.5em] 
+                  \lstick{$\ket{0}_7$} &  &          & \swap{-3} &\targ{ } & 
             \end{quantikz}};
 
         \node[above] at (quantcirc2.north) {\Huge Quantum circuit};
@@ -95,11 +94,10 @@
         \node (quantumtext2) [below] at (boardcode2.south) {\Large Quantum};
         \node (quantumcode2) [below] at (quantumtext2.south) {
             \begin{tabular}{l}
-                circuit.cx(q[2], q[3]) \\
+                circuit.x(q[2], q[3]) \\
+                circuit.ch(q[2], q[3]) \\
+                circuit.swap(q[2], q[7]) \\
                 circuit.cx(q[2], q[7]) \\
-                circuit.h(q[3]) \\
-                circuit.h(q[7]) \\
-                circuit.x(q[2]) \\
             \end{tabular}
         };
         \end{tikzpicture}

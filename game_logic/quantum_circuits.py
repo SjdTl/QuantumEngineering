@@ -238,8 +238,10 @@ class circuit():
 
         return out_with_freq
 
-
 if __name__ == "__main__":
+    from test_ui import start
+    start()
+
     qc = circuit(N=30)
     qc.new_pawn([0,1])
     qc.move([0],[2, 3]) # move green 0 -> 2 & 3\\ 
