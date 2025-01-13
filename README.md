@@ -1,5 +1,5 @@
 # QuantumEngineering
-![](https://github.com/SjdTl/QuantumEngineering/blob/main/positions/general_implementation.pdf)
+![](https://github.com/SjdTl/QuantumEngineering/blob/main/positions/general_implementation.svg)
 ## Hardware/software options:
 - [qiskit](https://www.ibm.com/quantum/qiskit) ([documentation](https://docs.quantum.ibm.com/guides))
 - [Project Q](https://my.projectq.co/)
