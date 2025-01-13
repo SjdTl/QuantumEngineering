@@ -26,8 +26,8 @@ class circuit():
 
     Example
     -------
-    qc = circuit()
-    qc.new_pawn([5,3,29])
+    qc = circuit()\\
+    qc.new_pawn([5,3,29])\\
     qc.measure()
 
     >>> [3,5,29]
@@ -212,11 +212,12 @@ class circuit():
         Test function that draws the circuit and opens it in matplotlib if mpl_open == True
         Also prints the circuit in the terminal if term_draw == True
         """
-        self.qcircuit.draw('mpl')
+        fig = self.qcircuit.draw('mpl', style="iqp-dark")
         if mpl_open == True:
             plt.show()
         if term_draw ==True:
             print(self.qcircuit)
+        return fig
 
     def _internal_measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True):
         """See circuit.measure() for documentation"""
@@ -237,19 +238,17 @@ class circuit():
         out_with_freq = result.data.meas.get_counts()
 
         return out_with_freq
+    
+    def _return_circuit(self):
+        return self.qcircuit
 
 if __name__ == "__main__":
-    from test_ui import start
-    start()
-
-    qc = circuit(N=30)
+    qc = circuit(N=10)
     qc.new_pawn([0,1])
     qc.move([0],[2, 3]) # move green 0 -> 2 & 3\\ 
     # qc.move([1], [4, 5]) # move red 1 -> 4 & 5, but capture green since red actually came on top of 3\\
     # qc.capture([4], [3], [2]) # reds 4 captures greens 3 that is connected to 2 \\
-    qc.draw(mpl_open=False)
+    qc.draw(mpl_open=True)
     print(qc._internal_measure(optimization_level=3))
 
-    def testing():
-        dksjf
     
