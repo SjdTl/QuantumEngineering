@@ -587,14 +587,40 @@ class LudoGame:
         return f'#{r:02x}{g:02x}{b:02x}'
     
     def check_quantum_capture(self, position, moved_color):
+        # First check if there's any potential capture at this position
         for player, data in self.PLAYERS.items():
-            if player != moved_color:  # the color we actually moved
-                for states in data['quantum_states'].values():
+            if player != moved_color:  # Check pawns of other players
+                for pawn_id, states in data['quantum_states'].items():
                     for state in states:
                         if position in state:
-                            messagebox.showinfo("Quantum Capture!", "Handle capture logic here.")
-                            self.reset_game()
-                            return True
+                            # Found a quantum state overlap - move the capturing pawn forward
+                            # Find the capturing pawn's ID
+                            for moved_pawn_id, moved_states in self.PLAYERS[moved_color]['quantum_states'].items():
+                                for moved_state in moved_states:
+                                    if position in moved_state:
+                                        # Move the capturing pawn one position forward
+                                        new_position = (position + 1) % self.TOTAL_SPOTS
+                                        
+                                        # Update the quantum state of the capturing pawn
+                                        new_states = []
+                                        for s in moved_states:
+                                            if position in s:
+                                                # Replace the current position with new_position
+                                                new_states.append({new_position: s[position]})
+                                            else:
+                                                new_states.append(s)
+                                        
+                                        self.PLAYERS[moved_color]['quantum_states'][moved_pawn_id] = new_states
+                                        
+                                        # Update classical position if needed
+                                        pawn_idx = int(moved_pawn_id.split('_')[1])
+                                        if self.PLAYERS[moved_color]['pawns'][pawn_idx] == position:
+                                            self.PLAYERS[moved_color]['pawns'][pawn_idx] = new_position
+                                        
+                                        messagebox.showinfo("Quantum Capture!", 
+                                            f"{moved_color.capitalize()} pawn moved forward")
+                                        self.draw_board()
+                                        return True
         return False
 
     def run(self):
