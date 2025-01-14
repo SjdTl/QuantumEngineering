@@ -590,6 +590,7 @@ class LudoGame:
         # First check if there's any potential capture at this position
         for player, data in self.PLAYERS.items():
             if player != moved_color:  # Check pawns of other players
+                # Check quantum pawns first
                 for pawn_id, states in data['quantum_states'].items():
                     for state in states:
                         if position in state:
@@ -598,8 +599,8 @@ class LudoGame:
                             for moved_pawn_id, moved_states in self.PLAYERS[moved_color]['quantum_states'].items():
                                 for moved_state in moved_states:
                                     if position in moved_state:
-                                        # Move the capturing pawn one position forward
-                                        new_position = (position + 1) % self.TOTAL_SPOTS
+                                        # Find next available position
+                                        new_position = self.find_next_free_position(position, moved_color)
                                         
                                         # Update the quantum state of the capturing pawn
                                         new_states = []
@@ -617,11 +618,78 @@ class LudoGame:
                                         if self.PLAYERS[moved_color]['pawns'][pawn_idx] == position:
                                             self.PLAYERS[moved_color]['pawns'][pawn_idx] = new_position
                                         
-                                        messagebox.showinfo("Quantum Capture!", 
-                                            f"{moved_color.capitalize()} pawn moved forward")
                                         self.draw_board()
                                         return True
+                
+                # Check classical pawns
+                if position in data['pawns']:
+                    # Found a classical pawn to capture - move the capturing quantum pawn forward
+                    for moved_pawn_id, moved_states in self.PLAYERS[moved_color]['quantum_states'].items():
+                        for moved_state in moved_states:
+                            if position in moved_state:
+                                # Find next available position
+                                new_position = self.find_next_free_position(position, moved_color)
+                                
+                                # Update the quantum state of the capturing pawn
+                                new_states = []
+                                for s in moved_states:
+                                    if position in s:
+                                        # Replace the current position with new_position
+                                        new_states.append({new_position: s[position]})
+                                    else:
+                                        new_states.append(s)
+                                
+                                self.PLAYERS[moved_color]['quantum_states'][moved_pawn_id] = new_states
+                                
+                                # Update classical position if needed
+                                pawn_idx = int(moved_pawn_id.split('_')[1])
+                                if self.PLAYERS[moved_color]['pawns'][pawn_idx] == position:
+                                    self.PLAYERS[moved_color]['pawns'][pawn_idx] = new_position
+                                
+                                # Send captured classical pawn back home
+                                captured_idx = data['pawns'].index(position)
+                                data['pawns'][captured_idx] = -1
+                                
+                                self.draw_board()
+                                return True
+                            
         return False
+    
+    def find_next_free_position(self, start_position, moving_color):
+        """Find the next unoccupied position after a capture."""
+        current_pos = (start_position + 1) % self.TOTAL_SPOTS
+        
+        while True:
+            position_occupied = False
+            
+            # Check if position is occupied by any classical pawn
+            for player_data in self.PLAYERS.values():
+                if current_pos in player_data['pawns']:
+                    position_occupied = True
+                    break
+            
+            # Check if position is occupied by any quantum pawn
+            for player_data in self.PLAYERS.values():
+                for states in player_data['quantum_states'].values():
+                    for state in states:
+                        if current_pos in state:
+                            position_occupied = True
+                            break
+                    if position_occupied:
+                        break
+                if position_occupied:
+                    break
+            
+            if not position_occupied:
+                return current_pos
+            
+            # Move to next position
+            current_pos = (current_pos + 1) % self.TOTAL_SPOTS
+    
+    def measure():
+        # TODO: add logic to run the circuit and make it such that it resets the board and places the right pawns in the right spots based on the result from the quantum circuit measurement.
+        return
+
 
     def run(self):
         self.window.mainloop()
