@@ -43,16 +43,17 @@ stylesheet  ="""
             QLabel, QLineEdit { margin : 0px; padding: 0px; }
             """
 
-def button_stylesheet(background_color=None, selected = False):
-        if background_color == None:
-            text = ""
+def button_stylesheet(color=None, selected = False, opacity = 200):
+        if color == None:
+            text = "transparent"
         else: 
-            text = rf"background-color : {background_color};"
-        return rf"""
+            text = color
+        stylesheet = rf"""
             QPushButton {{
                 border-radius: 25px; /* Half of the width/height */
                 border: {6 if selected == True else 2}px solid white;
-                {text}
+                background-color : {text};
+                opacity : {opacity};
             }}
             QPushButton:hover {{
                 border : 4px solid white;
@@ -61,10 +62,22 @@ def button_stylesheet(background_color=None, selected = False):
                 border : 6px solid white;
             }}
             """
+        return stylesheet
 
-def get_color(stylesheet):
-    # stylesheet = button.styleSheet()
-    return (stylesheet.split("background-color : ")[-1]).split(";")[0]
+def get_color_and_opacity(button):
+    stylesheet = button.styleSheet()
+    return (stylesheet.split("background-color : ")[-1]).split(";")[0], float((stylesheet.split("opacity : ")[-1]).split(";")[0])
+
+def copy_buttons(buttons):
+    new_buttons = []
+    for button in buttons:
+        new_button = QPushButton(button.text())
+        new_button.setStyleSheet(button.styleSheet())
+        new_button.setEnabled(button.isEnabled())
+        new_button.setFixedSize(50,50)
+        new_buttons.append(new_button)
+    
+    return new_buttons
 
 class LoadingPopup(QDialog):
     def __init__(self):
@@ -95,6 +108,38 @@ class CircuitFigure(QDialog):
         self.figure = figure
         self.canvas.figure = self.figure
         self.canvas.draw()
+
+class AllOptions(QDialog):
+    def __init__(self, or_buttons, options):
+        super().__init__()
+        self.setStyleSheet(stylesheet)
+        self.setWindowTitle("Other options")
+        self.setFixedSize(800, 600)
+
+        self.setStyleSheet(stylesheet)
+
+        grid = QGridLayout()
+
+        weights = list(options.keys())
+        positions = list(options.values())
+        for i in range(len(positions)+1):
+            print(i)
+            buttons = copy_buttons(or_buttons)
+            if i == 0:
+                for j in range(len(buttons)):
+                    grid.addWidget(buttons[j], i, j+1)
+            if i > 0:
+                for j in (range(len(buttons))):
+                    if j in positions[i-1]:
+                        pass
+                    else:
+                        buttons[j].setStyleSheet(button_stylesheet())
+                    grid.addWidget(buttons[j], i, j+1)
+                label = QLabel()
+                label.setText(str(weights[i-1]))
+                grid.addWidget(label, i, 0)
+        self.setLayout(grid)
+
         
 class Main(QMainWindow):
     def __init__(self, qcircuit, N=32):
@@ -105,6 +150,9 @@ class Main(QMainWindow):
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False)
         self.circuitfigure.plot(self.fig)
         self.circuitfigure.show()
+
+        self.pressed_buttons = []
+        self.pressed_cbuttons = []
 
         super().__init__()
         self.settings()
@@ -120,6 +168,7 @@ class Main(QMainWindow):
         
         self.reset = Qt.QAction("Reset", self)
         self.reset.setShortcut("Ctrl+R")
+        self.reset.triggered.connect(self.reset_app)
         self.file_menu.addAction(self.reset)
         
     def initUI(self):
@@ -139,7 +188,7 @@ class Main(QMainWindow):
         self.cdots = [Qt.QPushButton("") for _ in range(len(colours))]
         for dot, i in zip(self.cdots, range(len(colours))):
             dot.setFixedSize(50,50)
-            dot.setStyleSheet(button_stylesheet(background_color=colours[i]))
+            dot.setStyleSheet(button_stylesheet(color=colours[i]))
             grid.addWidget(dot, 0, i)
 
         self.measure = Qt.QPushButton("Measure")
@@ -155,56 +204,136 @@ class Main(QMainWindow):
         self.setGeometry(250,250,600,500)
     
     def button_events(self):
+        print(self.cdots, self.dots)
+
         for cbutton in self.cdots:
-            cbutton.pressed.connect(lambda b=cbutton: self.on_cbutton_pressed(b))
-            self.cbutton_pressed = True
-        self.measure.pressed.connect(self.measure_action)
+            cbutton.pressed.connect(lambda b=cbutton: self.cur_pressed_cbuttons(self.cdots.index(b)))
 
         for button in self.dots:
-            button.clicked.connect(lambda b=button: self.on_button_pressed(b))
-
-    def cur_pressed_buttons(self, button):
+            button.pressed.connect(lambda b=button: self.cur_pressed_buttons(self.dots.index(b)))
         
+        self.measure.clicked.connect(self.measure_action)
 
-    def on_button_pressed(self, button):
-        if self.cbutton_pressed == False:
-            color = get_color(button.styleSheet())
-            print('a')
+    def cur_pressed_cbuttons(self, name):
+        if name in self.pressed_cbuttons[:]:
+            self.pressed_cbuttons.remove(name)
+            self.cdots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.cdots[name]))[0], selected = False))
+        else:
+            (self.pressed_cbuttons.append(name))
+            self.pressed_cbuttons.sort()
+            self.cdots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.cdots[name]))[0], selected = True))
+        self.logic()
 
-    def on_cbutton_pressed(self, cbutton):
-        color = get_color(cbutton.styleSheet())
+    def cur_pressed_buttons(self, name):
+        if name in self.pressed_buttons[:]:
+            self.pressed_buttons.remove(name)
+            self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = False))
+        else:
+            (self.pressed_buttons.append(name))
+            self.pressed_buttons.sort()
+            self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = True))
+        self.logic()
 
-        cbutton.setStyleSheet(button_stylesheet(rf"{color}", selected = True))
+    def reset_buttons(self):
+        for name in self.pressed_cbuttons[:]:
+            self.pressed_cbuttons.remove(name)
+            self.cdots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.cdots[name]))[0], selected = False))
+        for name in self.pressed_buttons[:]:
+            self.pressed_buttons.remove(name)
+            self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = False))
+        print(self.pressed_buttons, self.pressed_cbuttons)
 
-        for button in self.dots:
-            button.pressed.connect(lambda b = button: self.new_pawn_action(color, b, cbutton))
+    def logic(self):
+        print(self.pressed_buttons, self.pressed_cbuttons)
 
-    
-    def new_pawn_action(self, color, button, cbutton):
-        button.setStyleSheet(button_stylesheet(rf"{color}"))
-        cbutton.setStyleSheet(button_stylesheet(rf"{color}", selected = False))
-        self.circuit.new_pawn(move_to=[self.dots.index(button)])
-        self.update_drawn_circuit()
-        button.pressed.disconnect()
-        cbutton.pressed.disconnect()
+        if len(self.pressed_cbuttons) == 1 and len(self.pressed_buttons) == 1:
+            # Initialize
+            color = get_color_and_opacity(self.cdots[self.pressed_cbuttons[0]])[0]
+            self.dots[self.pressed_buttons[0]].setStyleSheet(button_stylesheet(color))
+            self.circuit.new_pawn(move_to = self.pressed_buttons)
+            self.update_drawn_circuit()
+            self.reset_buttons()
+
+        if len(self.pressed_cbuttons) == 0 and len(self.pressed_buttons) == 3:
+            # Superposition move
+            for button_index in self.pressed_buttons:
+                current_color, current_opacity = get_color_and_opacity(self.dots[button_index])
+                if current_color != 'transparent':
+                    move_to = [x for x in self.pressed_buttons if x != button_index]
+                    move_from = [button_index]
+                    captive_entanglement = []
+                    captive = []
+                    capturer = []
+                    for i in range(len(move_to)):
+                        cap_color = get_color_and_opacity(self.dots[move_to[i]])[0]
+                        if cap_color != 'transparent' and cap_color != current_color:
+                            print(cap_color)
+                            captive_entanglement = [j for j in range(self.N) if get_color_and_opacity(self.dots[j])[0] == cap_color and move_to[i] != j]
+                            captive = [move_to[i]]
+                            move_to[i] = move_to[i] + 1
+                            capturer = [move_to[i]]
+                            break
+                    print(move_from, move_to, captive, captive_entanglement)
+                    self.circuit.move(move_from, move_to)
+                    if len(captive) != 0:
+                        self.circuit.capture(capturer = capturer, captive = captive, captive_entanglement = captive_entanglement)
+                            
+                    
+                    for i in move_to:
+                        self.dots[i].setStyleSheet(button_stylesheet(color=current_color, opacity = current_opacity/2))
+                        print(self.dots[i].styleSheet())
+                    for j in move_from:
+                        self.dots[j].setStyleSheet(button_stylesheet(color=None))
+
+                    self.reset_buttons()
+                    self.update_drawn_circuit()
+
+
 
     def measure_action(self):
-        positions = self.circuit.measure()
+        positions, out_with_freq = self.circuit.measure(out_internal_measure=True)
+        print(out_with_freq)
+        print(positions)
+        self.all_options = AllOptions(self.dots, out_with_freq)
         for i in range(self.N):
-            for i in positions:
-                continue
+            if i in positions:
+                pass
             else:
                 self.dots[i].setStyleSheet(button_stylesheet())
-        
 
-        print(positions)
+        self.all_options.show()
+        self.all_options.exec()
+        self.update_drawn_circuit()
+
 
     def update_drawn_circuit(self):
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False)
         self.circuitfigure.plot(self.fig)
 
     def reset_app(self):
-        1==1
+        # Show reset confirmation (optional)
+        popup = LoadingPopup()
+        popup.label.setText("Resetting")
+        popup.show()
+        # Reset circuit object
+        self.circuit._reset()
+
+        # Reset buttons
+        for dot in self.dots:
+            dot.setStyleSheet(button_stylesheet())
+        for cdot in self.cdots:
+            cdot.setStyleSheet(button_stylesheet(color=get_color_and_opacity(cdot)[0]))
+
+        # Clear pressed button lists
+        self.pressed_buttons.clear()
+        self.pressed_cbuttons.clear()
+
+        # Update the drawn circuit
+        self.update_drawn_circuit()
+
+        self.all_options.close()
+        popup.close()
+
 
 def start(circuit, N):
     app = QApplication(sys.argv)
@@ -213,6 +342,6 @@ def start(circuit, N):
     app.exec_()
     
 if __name__ in "__main__":
-    N = 10 # number of qubits(/places)
+    N = 12 # number of qubits(/places)
     qc = circuit(N)
     start(qc, N)

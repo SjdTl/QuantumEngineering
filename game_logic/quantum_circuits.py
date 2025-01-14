@@ -8,6 +8,8 @@ from qiskit_ibm_runtime.fake_provider import FakeSherbrooke
 from qiskit_ibm_runtime import SamplerV2 as Sampler 
 from qiskit_aer import AerSimulator
 
+import random
+
 
 class circuit():
     """
@@ -33,7 +35,8 @@ class circuit():
     >>> [3,5,29]
     """
     def __init__(self, N=32):
-        self.qcircuit = QuantumCircuit(N)
+        self.N = N
+        self.qcircuit = QuantumCircuit(self.N)
 
     def new_pawn(self, move_to : List[int]):
         """
@@ -172,7 +175,7 @@ class circuit():
             self.qcircuit.x(captive_entangled)
 
     
-    def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True):
+    def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024):
         """
         Description
         -----------
@@ -186,24 +189,47 @@ class circuit():
             Backend to which the circuit is transpiled (and run)
         optimization_level: int
             See https://docs.quantum.ibm.com/api/qiskit/transpiler_preset#generate_preset_pass_manager 
+        out_internal_measure : boolean
+            Outputs out_with_freq from the self._internal_measure if True. Mostly unused
         
         Returns
         -------
         output : np.array
             Array containing the collapsed bits describing the remaining pawns
+        if out_internal_measure == True: out_with_freq : dictionary
+            Dictionary containing the measurement outcome in binary with its frequency, see ibm for exact documentation
         
         Notes
         ------
         It seems not necessary to have a backend and a simulator arguments. However, the fakesimulators are describing to which architecture
         the circuit is compiled, while the simulator value makes sure that for the simulation itself a 'perfect' simulation is used,
         namely the AerSimulator(), because the normal fakesimulators can not simulate this many bits
+
+        The simulator returns several hunderds of measurement. Therefore all possible outcomes have a certain frequency connected to them
+        This is used as a weight in selecting the final measurement from all the measurements using pseudo-random methods
+        Also some results are filtered out to control for errors
         """
         
-        out_with_freq = self._internal_measure(backend = backend, optimization_level=optimization_level, simulator = simulator)
-        most_freq_out = max(out_with_freq, key=out_with_freq.get)
-        new_positions = [index for index, char in enumerate(most_freq_out[::-1]) if char == '1']
+        out_with_freq = self._internal_measure(backend = backend, optimization_level=optimization_level, simulator = simulator, shots = shots)
+        # THIS IS VERY WRONG
+        filter = 5 # with a shot of 1000, so if P < 0.5% the measurement is removed
+        filtered_data = {value/shots : [index for index, char in enumerate(key[::-1]) if char == '1'] for key, value in out_with_freq.items() if value >= filter}
+        weights = list(filtered_data.keys())
+        positions = list(filtered_data.values())
 
-        return new_positions
+        if weights:
+            chosen_positions = random.choices(positions, weights=weights, k=1)[0]
+        else:
+            raise ValueError(r"Not a single measurement outcome has a probability P>0.5\% of occuring; there is probably a measurement error")
+
+        print(filtered_data)
+        print(chosen_positions)
+
+        self.new_pawn(chosen_positions)
+        if out_internal_measure == False:
+            return chosen_positions
+        else:
+            return chosen_positions, filtered_data
     
     def draw(self, mpl_open = True, term_draw = True):
         """
@@ -219,7 +245,7 @@ class circuit():
             print(self.qcircuit)
         return fig
 
-    def _internal_measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True):
+    def _internal_measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, shots = 1024):
         """See circuit.measure() for documentation"""
 
         self.qcircuit.measure_all()
@@ -233,11 +259,16 @@ class circuit():
         else:
             sampler = Sampler(mode = AerSimulator())
 
-        job = sampler.run(pubs=[pub])
+        job = sampler.run(pubs=[pub], shots = shots)
         result = job.result()[0]
         out_with_freq = result.data.meas.get_counts()
 
+        self.qcircuit = QuantumCircuit(self.N)
+
         return out_with_freq
+    
+    def _reset(self):
+        self.qcircuit = QuantumCircuit(self.N)
     
     def _return_circuit(self):
         return self.qcircuit
@@ -249,6 +280,7 @@ if __name__ == "__main__":
     # qc.move([1], [4, 5]) # move red 1 -> 4 & 5, but capture green since red actually came on top of 3\\
     # qc.capture([4], [3], [2]) # reds 4 captures greens 3 that is connected to 2 \\
     qc.draw(mpl_open=True)
+    qc.measure()
     print(qc._internal_measure(optimization_level=3))
 
     
