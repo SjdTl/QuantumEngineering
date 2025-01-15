@@ -16,6 +16,19 @@ G2 = "g2"
 B2 = "b2"
 Y2 = "y2"
 
+# Player and pawn designation: also constant
+PLAYERS = [Y,R,G,B]
+PAWNS = [[Y1,Y2],[R1,R2],[G1,G2],[B1,B2]]
+
+# Order of play:
+# yellow: 0
+# red: 1
+# green: 2
+# blue: 3
+
+# Current player
+cur = 0
+
 # These will call the functions in quantum_circuits.py
 def new_pawn():
     return
@@ -34,19 +47,6 @@ def measure():
 
 # Initialize the board
 board = [None]*32
-
-# Order of play:
-# yellow: 0
-# red: 1
-# green: 2
-# blue: 3
-
-# Player and pawn designation
-players = [Y,R,G,B]
-pawns = [[Y1,Y2],[R1,R2],[G1,G2],[B1,B2]]
-
-# Current player
-cur = 0
 
 # Two start spots for every player. Order: Y-R-G-B
 in_start = [2,2,2,2]
@@ -68,7 +68,7 @@ while True:
     # Update player
     cur = (cur + 1) % 4
 
-    print(f"Player turn: {players[cur]}")
+    print(f"Player turn: {PLAYERS[cur]}")
 
     # Prompt for choice: classical or quantum move
     choice = input("Choose move (0 for classical; 1 for quantum): ")
@@ -90,8 +90,8 @@ while True:
     print(f"Results: {values}")
 
     # Calculate movement options given the values
-    available = [i for i, x in enumerate(board) if x["Player"] == players[cur]]
-    if in_start[cur] != 0 and 6 in values and board[start_pos[cur]]["Player"] != players[cur]:
+    available = [i for i, x in enumerate(board) if x["Player"] == PLAYERS[cur]]
+    if in_start[cur] != 0 and 6 in values and board[start_pos[cur]]["Player"] != PLAYERS[cur]:
         available.append(-1)
     options = []
     targets_list = []
@@ -102,12 +102,12 @@ while True:
             value = 0
             while True:
                 target = (start_pos[cur] + value) % 32
-                if board[target] != None and board[target]["Player"] != players[cur]:
+                if board[target] != None and board[target]["Player"] != PLAYERS[cur]:
                     if value < 31:
                         value += 1
                     else:
                         occupation = [1,1] # !!! THIS NEEDS TO BE CHANGED BECAUSE OF FINISH MECHANICS !!!
-                elif board[target] != None and board[target]["Player"] == players[cur]:
+                elif board[target] != None and board[target]["Player"] == PLAYERS[cur]:
                     occupation = [1,1]
                     break
                 else:
@@ -117,12 +117,12 @@ while True:
         for i in range(len(values)):
             while True:
                 target = (ava + values[i]) % 32
-                if board[target] != None and board[target]["Player"] != players[cur]:
+                if board[target] != None and board[target]["Player"] != PLAYERS[cur]:
                     if values[i] < 31:
                         values[i] += 1
                     else:
                         occupation = [1,1] # !!! THIS NEEDS TO BE CHANGED BECAUSE OF FINISH MECHANICS !!!
-                elif board[target] != None and board[target]["Player"] == players[cur]:
+                elif board[target] != None and board[target]["Player"] == PLAYERS[cur]:
                     occupation[i] = 1
                     targets[i] = target
                     break
