@@ -30,6 +30,14 @@ PAWNS = [[Y1,Y2],[R1,R2],[G1,G2],[B1,B2]]
 cur = 0
 
 # These will call the functions in quantum_circuits.py
+# ---------------------
+# I'm guessing based on the following you assume that the quantum_circuits.py contains functions
+# This is not true
+# It contains a class
+# Therefore start with initializing the circuit by: circuit = circuit()
+# And change the circuit by just selecting a method: circuit.new_pawn() (this does not return anything)
+# And when measuring do the following measurement = circuit.measure()
+# ---------------------
 def new_pawn():
     return
 
