@@ -68,6 +68,24 @@ class circuit():
 
         self.qcircuit.x(move_to)
 
+    def switch(self, move_from : List[int], move_to : List[int]):
+        """
+        Description
+        ------------
+        Just adds a switch gate between move_from and move_to
+
+        Parameters
+        ----------
+        move_form : List[int]
+            List of one integer: the position to move from
+        move_to : List[int]
+            List of one integer: the position to move to
+        """
+        if len(move_from) != 1 or len(move_to) != 1:
+            raise ValueError("move must be in the form [int]; a list containing one integer")
+        
+        self.qcircuit.swap(move_from[0], move_to)
+
     def move(self, move_from : List[int], move_to : List[int]):
         """
         Description
@@ -174,6 +192,42 @@ class circuit():
         for captive_entangled in captive_entanglement:
             self.qcircuit.x(captive_entangled)
 
+    def merge_move(self, move_from : List[int], move_to : List[int], merge_in : List[int]):
+        """
+        Description
+        -----------
+        Temporary move for now
+
+        Pawn moves from a position move_from to two positions, but one of these positions is occupied by the same pawn in superposition (namely on position merge_in)
+        """
+        print(move_to, merge_in)
+        if len(move_from) != 1:
+            raise ValueError("Move_from must be in the from [int]; a list containing one integer")
+        if len(move_to) != 2:
+            raise ValueError("Move_to must be in the form [int, int]: a list of two integers")
+        if len(merge_in) != 1:
+            raise ValueError("Merge_in must be in the form [int]: a list containing one integer")
+        if merge_in[0] not in move_to:
+            raise ValueError("Merge_in position is not in the two move_to positions")
+        
+        aN = (-2 - np.sqrt(3))*np.sqrt(2 - np.sqrt(3))/2
+        bN = -np.sqrt(1/2 - np.sqrt(3)/4)
+        cN = (-2 + np.sqrt(3))*np.sqrt(np.sqrt(3) + 2)/2
+        dN = np.sqrt(np.sqrt(3)/4 + 1/2)
+
+        U = np.array([
+            [1, 0, 0, 0],
+            [0, aN, bN, 0],
+            [0, cN, dN, 0],
+            [0, 0, 0, 1]
+        ])
+
+        move_to.remove(merge_in[0])    
+    
+        self.qcircuit.swap(move_from[0], move_to[0])
+        self.qcircuit.unitary(U, [merge_in[0], move_to[0]])
+
+
     
     def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024):
         """
@@ -277,10 +331,8 @@ if __name__ == "__main__":
     qc = circuit(N=10)
     qc.new_pawn([0,1])
     qc.move([0],[2, 3]) # move green 0 -> 2 & 3\\ 
-    # qc.move([1], [4, 5]) # move red 1 -> 4 & 5, but capture green since red actually came on top of 3\\
-    # qc.capture([4], [3], [2]) # reds 4 captures greens 3 that is connected to 2 \\
+    qc.merge_move([2], [3], [4])
     qc.draw(mpl_open=True)
     qc.measure()
-    print(qc._internal_measure(optimization_level=3))
 
     

@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QComboBox,QPushButton, QLabel, QHBoxLayout,QVBoxLayout, QGridLayout, QMenuBar, QMainWindow, QDialog
 import PyQt5.QtWidgets as Qt
+from PyQt5 import QtCore
 import sys
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import os
@@ -94,7 +95,7 @@ class CircuitFigure(QDialog):
         super().__init__()
         self.setStyleSheet(stylesheet)
         self.setWindowTitle("Circuit")
-        self.setFixedSize(800, 600)
+        self.resize(800, 600)
 
         self.figure = plt.figure()
 
@@ -114,7 +115,7 @@ class AllOptions(QDialog):
         super().__init__()
         self.setStyleSheet(stylesheet)
         self.setWindowTitle("Other options")
-        self.setFixedSize(800, 600)
+        self.resize(800, 600)
 
         self.setStyleSheet(stylesheet)
 
@@ -152,6 +153,7 @@ class Main(QMainWindow):
         self.circuitfigure.show()
 
         self.pressed_buttons = []
+        self.spressed_buttons = []
         self.pressed_cbuttons = []
 
         super().__init__()
@@ -225,13 +227,23 @@ class Main(QMainWindow):
         self.logic()
 
     def cur_pressed_buttons(self, name):
-        if name in self.pressed_buttons[:]:
-            self.pressed_buttons.remove(name)
-            self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = False))
+        modifiers = Qt.QApplication.keyboardModifiers()
+        if (modifiers != QtCore.Qt.ShiftModifier):
+            if name in self.pressed_buttons[:]:
+                self.pressed_buttons.remove(name)
+                self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = False))
+            else:
+                (self.pressed_buttons.append(name))
+                self.pressed_buttons.sort()
+                self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = True))
         else:
-            (self.pressed_buttons.append(name))
-            self.pressed_buttons.sort()
-            self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = True))
+            if name in self.spressed_buttons[:]:
+                self.spressed_buttons.remove(name)
+                self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = False))
+            else:
+                (self.spressed_buttons.append(name))
+                self.spressed_buttons.sort()
+                self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = True))
         self.logic()
 
     def reset_buttons(self):
@@ -241,12 +253,15 @@ class Main(QMainWindow):
         for name in self.pressed_buttons[:]:
             self.pressed_buttons.remove(name)
             self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = False))
-        print(self.pressed_buttons, self.pressed_cbuttons)
+        for name in self.spressed_buttons[:]:
+            self.spressed_buttons.remove(name)
+            self.dots[name].setStyleSheet(button_stylesheet(color = get_color_and_opacity((self.dots[name]))[0], selected = False))
+        print(self.pressed_buttons, self.pressed_cbuttons, self.spressed_buttons)
 
     def logic(self):
-        print(self.pressed_buttons, self.pressed_cbuttons)
+        print(self.pressed_buttons, self.pressed_cbuttons, self.spressed_buttons)
 
-        if len(self.pressed_cbuttons) == 1 and len(self.pressed_buttons) == 1:
+        if len(self.pressed_cbuttons) == 1 and len(self.pressed_buttons) == 1 and len(self.spressed_buttons) == 0:
             # Initialize
             color = get_color_and_opacity(self.cdots[self.pressed_cbuttons[0]])[0]
             self.dots[self.pressed_buttons[0]].setStyleSheet(button_stylesheet(color))
@@ -254,8 +269,11 @@ class Main(QMainWindow):
             self.update_drawn_circuit()
             self.reset_buttons()
 
-        if len(self.pressed_cbuttons) == 0 and len(self.pressed_buttons) == 3:
+        if len(self.pressed_cbuttons) == 0 and len(self.pressed_buttons) == 3 and len(self.spressed_buttons) == 0:
             # Superposition move
+            # REWRITE THIS PIECE OF LOGIC SINCE IT IS VERY INEFFICIENT AND HARD TO UNDERSTAND
+
+            no_move = False
             for button_index in self.pressed_buttons:
                 current_color, current_opacity = get_color_and_opacity(self.dots[button_index])
                 if current_color != 'transparent':
@@ -266,27 +284,40 @@ class Main(QMainWindow):
                     capturer = []
                     for i in range(len(move_to)):
                         cap_color = get_color_and_opacity(self.dots[move_to[i]])[0]
-                        if cap_color != 'transparent' and cap_color != current_color:
-                            print(cap_color)
-                            captive_entanglement = [j for j in range(self.N) if get_color_and_opacity(self.dots[j])[0] == cap_color and move_to[i] != j]
-                            captive = [move_to[i]]
-                            move_to[i] = move_to[i] + 1
-                            capturer = [move_to[i]]
+                        if cap_color != 'transparent':
+                            if cap_color != current_color:
+                                captive_entanglement = [j for j in range(self.N) if get_color_and_opacity(self.dots[j])[0] == cap_color and move_to[i] != j]
+                                captive = [move_to[i]]
+                                move_to[i] = move_to[i] + 1
+                                capturer = [move_to[i]]
+                            else: 
+                                self.circuit.merge_move(move_from = move_from, merge_in = [move_to[i]], move_to = move_to)
+                                no_move = True
                             break
-                    print(move_from, move_to, captive, captive_entanglement)
-                    self.circuit.move(move_from, move_to)
-                    if len(captive) != 0:
-                        self.circuit.capture(capturer = capturer, captive = captive, captive_entanglement = captive_entanglement)
-                            
+                    if no_move == False:
+                        self.circuit.move(move_from, move_to)
+                        if len(captive) != 0:
+                            self.circuit.capture(capturer = capturer, captive = captive, captive_entanglement = captive_entanglement)
+                    no_move = False
                     
                     for i in move_to:
                         self.dots[i].setStyleSheet(button_stylesheet(color=current_color, opacity = current_opacity/2))
-                        print(self.dots[i].styleSheet())
                     for j in move_from:
                         self.dots[j].setStyleSheet(button_stylesheet(color=None))
 
                     self.reset_buttons()
                     self.update_drawn_circuit()
+        
+        if len(self.spressed_buttons) == 2 and len(self.pressed_cbuttons) == 0 and len(self.pressed_buttons) == 0:
+            self.circuit.switch([self.spressed_buttons[0]], [self.spressed_buttons[1]])
+            c0, o0 = get_color_and_opacity(self.dots[self.spressed_buttons[0]])
+            c1, o1 = get_color_and_opacity(self.dots[self.spressed_buttons[1]])
+
+            self.dots[self.spressed_buttons[0]].setStyleSheet(button_stylesheet(color=c1, opacity=o1))
+            self.dots[self.spressed_buttons[1]].setStyleSheet(button_stylesheet(color=c0, opacity=o0))
+
+            self.reset_buttons()
+            self.update_drawn_circuit()
 
 
 
@@ -331,7 +362,12 @@ class Main(QMainWindow):
         # Update the drawn circuit
         self.update_drawn_circuit()
 
-        self.all_options.close()
+        try:
+            self.all_options.close()
+        except AttributeError:
+            1==1
+            
+            
         popup.close()
 
 
