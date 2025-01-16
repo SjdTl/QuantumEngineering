@@ -10,30 +10,35 @@ if QC == True:
     from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk) 
 
     class quantum_circuit_window():
-        def __init__(self):
+        def __init__(self, qcircuit):
             self.window = tk.Toplevel() 
                     # setting the title  
             self.window.title('Plotting in Tkinter') 
             
             # dimensions of the main window 
             self.window.geometry("500x500") 
+            self.canvas = FigureCanvasTkAgg(qcircuit.draw(mpl_open = False, term_draw = False), 
+                                    master = self.window)   
+            self.canvas.draw() 
+            self.canvas.get_tk_widget().pack()
 
         def plot(self, qcircuit): 
             # creating the Tkinter canvas 
             # containing the Matplotlib figure 
-            canvas = FigureCanvasTkAgg(qcircuit.draw(mpl_open = False, term_draw = False), 
+            if self.canvas is not None:
+                self.canvas.get_tk_widget().destroy()
+            self.canvas = FigureCanvasTkAgg(qcircuit.draw(mpl_open = False, term_draw = False), 
                                     master = self.window)   
-            canvas.draw() 
-        
+            self.canvas.draw() 
             # placing the canvas on the Tkinter window 
-            canvas.get_tk_widget().pack() 
-        
+            self.canvas.get_tk_widget().pack() 
+            self.window.update()
             # creating the Matplotlib toolbar 
-            toolbar = NavigationToolbar2Tk(canvas, self.window) 
-            toolbar.update() 
+            # toolbar = NavigationToolbar2Tk(canvas, self.window) 
+            # toolbar.update() 
         
             # placing the toolbar on the Tkinter window 
-            canvas.get_tk_widget().pack() 
+            # canvas.get_tk_widget().pack() 
     
 class LudoGame:
     def __init__(self):
@@ -90,8 +95,7 @@ class LudoGame:
         # Initialize circuit
         if QC == True:
             self.qc = circuit(self.TOTAL_SPOTS)
-            self.qc_window = quantum_circuit_window()
-            self.qc_window.plot(self.qc)
+            self.qc_window = quantum_circuit_window(self.qc)
 
 
     # ------------------------------------------------------------------
