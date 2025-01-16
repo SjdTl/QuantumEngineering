@@ -196,6 +196,9 @@ class Main(QMainWindow):
         self.measure = Qt.QPushButton("Measure")
         grid.addWidget(self.measure, 0, len(colours)+1)
 
+        self.nrqubits = Qt.QLabel(rf"# qubits used={0}")
+        grid.addWidget(self.nrqubits, 0, len(colours)+2)
+
         # show grid
         central_widget.setLayout(grid)
 
@@ -322,9 +325,8 @@ class Main(QMainWindow):
 
 
     def measure_action(self):
-        positions, out_with_freq = self.circuit.measure(out_internal_measure=True)
-        print(out_with_freq)
-        print(positions)
+        positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
+        self.nrqubits.setText((rf"# qubits used={nr_of_qubits_used}"))
         self.all_options = AllOptions(self.dots, out_with_freq)
         for i in range(self.N):
             if i in positions:
@@ -378,6 +380,6 @@ def start(circuit, N):
     app.exec_()
     
 if __name__ in "__main__":
-    N = 12 # number of qubits(/places)
+    N = 32 # number of qubits(/places)
     qc = circuit(N)
     start(qc, N)
