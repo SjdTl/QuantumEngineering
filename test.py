@@ -2,6 +2,39 @@ import tkinter as tk
 from tkinter import messagebox
 import random
 
+QC = True
+if QC == True:
+    from game_logic.quantum_circuits import circuit
+    import matplotlib.pyplot as plt
+    from matplotlib.figure import Figure 
+    from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk) 
+
+    class quantum_circuit_window():
+        def __init__(self):
+            self.window = tk.Toplevel() 
+                    # setting the title  
+            self.window.title('Plotting in Tkinter') 
+            
+            # dimensions of the main window 
+            self.window.geometry("500x500") 
+
+        def plot(self, qcircuit): 
+            # creating the Tkinter canvas 
+            # containing the Matplotlib figure 
+            canvas = FigureCanvasTkAgg(qcircuit.draw(mpl_open = False, term_draw = False), 
+                                    master = self.window)   
+            canvas.draw() 
+        
+            # placing the canvas on the Tkinter window 
+            canvas.get_tk_widget().pack() 
+        
+            # creating the Matplotlib toolbar 
+            toolbar = NavigationToolbar2Tk(canvas, self.window) 
+            toolbar.update() 
+        
+            # placing the toolbar on the Tkinter window 
+            canvas.get_tk_widget().pack() 
+    
 class LudoGame:
     def __init__(self):
         self.window = tk.Tk()
@@ -54,6 +87,13 @@ class LudoGame:
         self.setup_main_layout()
         self.initialize_pawns()
         
+        # Initialize circuit
+        if QC == True:
+            self.qc = circuit(self.TOTAL_SPOTS)
+            self.qc_window = quantum_circuit_window()
+            self.qc_window.plot(self.qc)
+
+
     # ------------------------------------------------------------------
     # Main Layout: Two columns -> Left: Board Canvas, Right: Debug Panel
     # ------------------------------------------------------------------
@@ -642,6 +682,10 @@ class LudoGame:
         pawn_id = f"pawn_{idx}"
         self.PLAYERS[color]['quantum_states'][pawn_id] = [{pos: 1.0}]
         
+        if QC == True:
+            self.qc.new_pawn(pos)
+            self.qc_window.plot(self.qc)
+
         self.draw_board()
     
     def debug_remove_pawn(self):
@@ -818,6 +862,7 @@ class LudoGame:
 
     def run(self):
         self.window.mainloop()
+        
 
 if __name__ == "__main__":
     game = LudoGame()
