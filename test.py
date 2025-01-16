@@ -139,6 +139,7 @@ class LudoGame:
     
     def draw_paths(self):
         cell_size = 40
+        # Draw regular positions (0-31)
         for i in range(32):
             x, y = self.get_path_position(i)
             color = 'white'
@@ -151,11 +152,33 @@ class LudoGame:
                 fill=color, outline='black'
             )
             self.canvas.create_text(x, y, text=str(i), fill='black', font=('Arial', 10))
+        
+        # Draw winning positions (32-39)
+        winning_positions = {
+            'blue': [(32, 33)],
+            'yellow': [(34, 35)],
+            'green': [(36, 37)],
+            'red': [(38, 39)]
+        }
+        
+        for color, positions in winning_positions.items():
+            for start, end in positions:
+                for pos in (start, end):
+                    x, y = self.get_path_position(pos)
+                    self.canvas.create_oval(
+                        x - cell_size//2, y - cell_size//2,
+                        x + cell_size//2, y + cell_size//2,
+                        fill=self.PLAYERS[color]['color'],
+                        outline='gold',  # Make winning positions stand out
+                        width=3
+                    )
+                    self.canvas.create_text(x, y, text="★", fill='white', font=('Arial', 20))
     
     def get_path_position(self, position):
         origin_x = self.BOARD_SIZE // 2
         origin_y = self.BOARD_SIZE // 2
         cell = 50
+        
         coords = {
             0:  (origin_x + cell, origin_y - 4*cell),
             1:  (origin_x + cell, origin_y - 3*cell),
@@ -192,6 +215,22 @@ class LudoGame:
             29: (origin_x - cell,   origin_y - 3*cell),
             30: (origin_x - cell,   origin_y - 4*cell),
             31: (origin_x,          origin_y - 4*cell),
+            
+            # Blue winning positions (inside blue quadrant, vertically aligned under position 0)
+            32: (origin_x, origin_y - 3*cell),
+            33: (origin_x, origin_y - 2*cell),
+            
+            # Yellow winning positions (inside yellow quadrant, horizontally aligned after position 8)
+            34: (origin_x + 2*cell, origin_y),
+            35: (origin_x + 3*cell, origin_y),
+            
+            # Green winning positions (inside green quadrant, vertically aligned above position 16)
+            36: (origin_x, origin_y + 2*cell),
+            37: (origin_x, origin_y + 3*cell),
+            
+            # Red winning positions (inside red quadrant, horizontally aligned before position 24)
+            38: (origin_x - 2*cell, origin_y),
+            39: (origin_x - 3*cell, origin_y),
         }
         return coords[position]
     
@@ -306,10 +345,8 @@ class LudoGame:
         self.dice_label1.config(text=f"Dice 1: {self.dice_value1}")
         self.dice_label2.config(text=f"Dice 2: {self.dice_value2}")
         
-        # 4) Continue any “reroll” or “no valid moves” checks
-        if self.should_reroll():
-            self.roll_dice()
-        elif not self.has_valid_moves():
+        # 4) Continue any "reroll" or "no valid moves" checks
+        if not self.has_valid_moves():
             messagebox.showinfo("No Moves", f"{self.current_player.capitalize()} has no valid moves!")
             self.next_player()
             self.reset_dice_labels()
@@ -320,21 +357,17 @@ class LudoGame:
         self.dice_label1.config(text="Dice 1: 0")
         self.dice_label2.config(text="Dice 2: 0")
     
-    def should_reroll(self):
-        # Example logic for re-rolling (can be changed)
-        current_player = self.PLAYERS[self.current_player]
-        if len([p for p in current_player['pawns'] if p != -1]) == 1:
-            if self.dice_value1 == self.dice_value2:
-                pawn_pos = next(p for p in current_player['pawns'] if p != -1)
-                new_pos1 = (pawn_pos + self.dice_value1) % self.TOTAL_SPOTS
-                new_pos2 = (pawn_pos + self.dice_value2) % self.TOTAL_SPOTS
-                if new_pos1 == new_pos2:
-                    return True
-        return False
-    
     def has_valid_moves(self):
         current_player = self.PLAYERS[self.current_player]
         has_moves = False
+        
+        # Get winning positions for current player
+        winning_positions = {
+            'blue': [32, 33],
+            'yellow': [34, 35],
+            'green': [36, 37],
+            'red': [38, 39]
+        }[self.current_player]
         
         # Check if player can put a new pawn in play with a 6
         if self.dice_value1 == 6 and -1 in current_player['pawns']:
@@ -363,7 +396,30 @@ class LudoGame:
         # Check existing pawns
         for pawn_pos in current_player['pawns']:
             if pawn_pos != -1:
-                new_pos = (pawn_pos + self.dice_value1) % self.TOTAL_SPOTS
+                new_pos = (pawn_pos + self.dice_value1)
+                
+                # Special handling for winning positions
+                if pawn_pos < 32:  # If pawn is on main board
+                    # Check if pawn can enter winning position
+                    print("GO IN WINIING0\n")
+                    if self.can_enter_winning_position(pawn_pos, new_pos, winning_positions):
+                        print("GO IN WINIING1\n")
+                        # If they jumped directly to the second winning spot (e.g., 33 for Blue),
+                        # increment that player's points right here.
+                        if new_pos == winning_positions[1]:
+                            self.PLAYERS[self.current_player]['points'] += 1
+                        
+                        has_moves = True
+                        break
+                    # Regular movement on main board
+                    new_pos = new_pos % self.TOTAL_SPOTS
+                elif pawn_pos in winning_positions:
+                    # If already in first winning position, can only move to second
+                    if pawn_pos == winning_positions[0] and new_pos == winning_positions[1]:
+                        has_moves = True
+                        break
+                    continue  # Skip other checks if in winning position
+                
                 path_clear = True
                 for step in range(1, self.dice_value1 + 1):
                     check_pos = (pawn_pos + step) % self.TOTAL_SPOTS
@@ -412,14 +468,42 @@ class LudoGame:
             for pawn_id, states in player_data['quantum_states'].items():
                 for state in states:
                     for pos, prob in state.items():
-                        # If there's an actual position for this "part" of the quantum state
                         if pos != -1:
                             x, y = self.get_path_position(pos)
-                            # Check if the user clicked within this pawn's circle
                             if (x - 20 <= event.x <= x + 20) and (y - 20 <= event.y <= y + 20):
-                                # Create new quantum superposition using dice_value1 and dice_value2
-                                pos1 = (pos + self.dice_value1) % self.TOTAL_SPOTS
-                                pos2 = (pos + self.dice_value2) % self.TOTAL_SPOTS
+                                # Get winning positions for this player
+                                winning_positions = {
+                                    'blue': [32, 33],
+                                    'yellow': [34, 35],
+                                    'green': [36, 37],
+                                    'red': [38, 39]
+                                }[player_key]
+
+                                # Calculate new positions, checking for winning moves
+                                pos1 = pos + self.dice_value1
+                                pos2 = pos + self.dice_value2
+
+                                # If pawn is on main board, check if it can enter winning position
+                                if pos < 32:
+                                    if self.can_enter_winning_position(pos, pos1, winning_positions):
+                                        pos1 = winning_positions[0]  # First winning spot
+                                    else:
+                                        pos1 = pos1 % self.TOTAL_SPOTS
+                                    
+                                    if self.can_enter_winning_position(pos, pos2, winning_positions):
+                                        pos2 = winning_positions[0]  # First winning spot
+                                    else:
+                                        pos2 = pos2 % self.TOTAL_SPOTS
+                                # If pawn is in first winning position, allow move to second
+                                elif pos == winning_positions[0]:
+                                    if pos1 == winning_positions[1] or pos2 == winning_positions[1]:
+                                        if pos1 == winning_positions[1]:
+                                            pos2 = pos  # Stay in place for second state
+                                        else:
+                                            pos1 = pos  # Stay in place for first state
+                                        self.PLAYERS[player_key]['points'] += 1
+                                    else:
+                                        continue  # Invalid move from winning position
 
                                 new_prob1 = prob * 0.5
                                 new_prob2 = prob * 0.5
@@ -427,7 +511,6 @@ class LudoGame:
                                 new_states = []
                                 for s in states:
                                     if pos in s:
-                                        # Split into two new positions
                                         new_states.append({pos1: new_prob1})
                                         new_states.append({pos2: new_prob2})
                                     else:
@@ -438,19 +521,17 @@ class LudoGame:
                                 pawn_idx = int(pawn_id.split('_')[1])
                                 player_data['pawns'][pawn_idx] = pos1
 
-                                # Check quantum capture
                                 if self.check_quantum_capture(pos1, player_key) or self.check_quantum_capture(pos2, player_key):
                                     return
 
                                 moved = True
-                                break  # Stop looking for more positions
+                                break
                     if moved:
-                        break  # Stop looking for more states
+                        break
                 if moved:
-                    break  # Stop looking for more pawn_ids
-
+                    break
             if moved:
-                break  # Stop looking for more players
+                break
 
         # 4) If something was moved (quantum movement happened)
         if moved:
@@ -461,6 +542,9 @@ class LudoGame:
 
             # Redraw board after move
             self.draw_board()
+            
+            # Print all pawn positions after the move
+            self.print_pawn_positions()  # New print statement
             return
 
         # 5) If no quantum pawn was moved, try "placing a new pawn" logic (for the current player)
@@ -500,6 +584,11 @@ class LudoGame:
         else:
             # Might add later
             pass
+
+    def print_pawn_positions(self):
+        """Prints the current positions of all pawns."""
+        for color, data in self.PLAYERS.items():
+            print(f"{color.capitalize()} Pawns: {data['pawns']}")
 
     
     def next_player(self):
@@ -690,6 +779,42 @@ class LudoGame:
         # TODO: add logic to run the circuit and make it such that it resets the board and places the right pawns in the right spots based on the result from the quantum circuit measurement.
         return
 
+    def can_enter_winning_position(self, current_pos, new_pos, winning_positions):
+        """
+        Check if a pawn can enter its winning positions (the 2 colored spots).
+        A pawn can enter if it rolls exactly the number needed to reach the winning position.
+        """
+        # Where each color leaves the main ring to enter its winning positions
+        # Format: color -> (lastSpotOnRing, firstWinningSpot, secondWinningSpot)
+        entry_points = {
+            'blue':   (31, 32, 33),
+            'yellow': (7,  34, 35),
+            'green':  (15, 36, 37),
+            'red':    (23, 38, 39),
+        }
+
+        # Get the entry point data for this color
+        last_ring_spot, wpos1, wpos2 = entry_points[self.current_player]
+
+        # Calculate how many spots before the entry point we are
+        spots_before = 0
+        temp_pos = current_pos
+        while temp_pos != last_ring_spot:
+            temp_pos = (temp_pos + 1) % self.TOTAL_SPOTS
+            spots_before += 1
+
+        # If we're before the entry point and the dice roll matches the distance
+        # to either winning position, allow the move
+        if current_pos != last_ring_spot:  # Only check if we're not already at the entry point
+            if new_pos - current_pos == spots_before + 1:  # Distance to first winning spot
+                return True
+            if new_pos - current_pos == spots_before + 2:  # Distance to second winning spot
+                return True
+        else:  # If we're exactly at the entry point
+            if new_pos in (wpos1, wpos2):
+                return True
+
+        return False
 
     def run(self):
         self.window.mainloop()
