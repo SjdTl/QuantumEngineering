@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="32.799999mm"
+   height="32.799999mm"
+   viewBox="0 0 32.799999 32.799999"
+   version="1.1"
+   id="svg1"
+   inkscape:export-batch-path="C:\Users\terlo\OneDrive\University\Assignments\Quantum Engineering\QuantumEngineering\UI figures"
+   inkscape:export-batch-name="batch"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.51654111"
+     inkscape:cx="151.00444"
+     inkscape:cy="60.014585"
+     inkscape:window-width="3200"
+     inkscape:window-height="1711"
+     inkscape:window-x="1911"
+     inkscape:window-y="1"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:page
+       x="0"
+       y="0"
+       width="32.799999"
+       height="32.799999"
+       id="page5"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-88.949282,-13.156555)">
+    <rect
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:3.4;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-8-1"
+       width="29.4"
+       height="29.399998"
+       x="90.649284"
+       y="14.856555"
+       ry="3.0381637"
+       rx="3.0092998" />
+    <ellipse
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.600001;stroke-linejoin:round;stroke-opacity:1"
+       id="path1-8-52"
+       cx="113.042"
+       cy="21.998163"
+       rx="3.4499998"
+       ry="3.45" />
+    <ellipse
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.600001;stroke-linejoin:round;stroke-opacity:1"
+       id="path1-8-5-7"
+       cx="98.042"
+       cy="36.998165"
+       rx="3.4499998"
+       ry="3.45" />
+    <ellipse
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.600001;stroke-linejoin:round;stroke-opacity:1"
+       id="path1-8-5-7-2"
+       cx="105.542"
+       cy="29.498165"
+       rx="3.4499998"
+       ry="3.45" />
+  </g>
+</svg>

@@ -33,12 +33,6 @@ if QC == True:
             # placing the canvas on the Tkinter window 
             self.canvas.get_tk_widget().pack() 
             self.window.update()
-            # creating the Matplotlib toolbar 
-            # toolbar = NavigationToolbar2Tk(canvas, self.window) 
-            # toolbar.update() 
-        
-            # placing the toolbar on the Tkinter window 
-            # canvas.get_tk_widget().pack() 
     
 class LudoGame:
     def __init__(self):
