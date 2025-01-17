@@ -289,8 +289,8 @@ class Main(QMainWindow):
         self.random_turn_button.setEnabled(False)
 
         if random_turn:
-            # QTimer.singleShot(500, self.game_logic(random_turn = True))
-            self.game_logic(random_turn=True)
+            QTimer.singleShot(250, lambda : self.game_logic(random_turn = True))
+            # self.game_logic(random_turn=True)
         else:
             self.game_logic()
 
