@@ -19,6 +19,7 @@ import sys
 import os
 import numpy as np
 import random
+from pandas import DataFrame
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -148,6 +149,10 @@ class Main(QMainWindow):
         self.random_turn_button.triggered.connect(lambda: self.next_turn(random_turn=True))
         self.random_turn_button.setEnabled(False)
 
+        self.print_positions_button = Qt.QAction("Print positions", self)
+        self.print_positions_button.triggered.connect(self.print_positions)
+        self.print_positions_button.setShortcut("Ctrl+Alt+P")
+
         self.circuit_visibility_button = Qt.QAction("Show circuit", self)
         if self.debug:
             self.circuit_visibility_button.setText("Close circuit")
@@ -159,8 +164,30 @@ class Main(QMainWindow):
             self.position_names_button.setText("Remove position names")
         self.position_names_button.triggered.connect(self.show_position_names)
 
-        self.capture_move_button = Qt.QAction("Capture a classical pawn")
-        self.capture_move_button.triggered.connect(self.start_in_classical_capture)
+        self.qc_captures_button = self.test_moves.addMenu("QC captures")
+
+        capture_types = ['normal']
+        self.qc_capture_buttons = [Qt.QAction(capture_type) for capture_type in capture_types]
+        for button, capture_type in zip(self.qc_capture_buttons, capture_types):
+            button.triggered.connect(lambda _, b = capture_type: self.start_in_quantum_classical_capture(type_cap = b))
+            self.qc_captures_button.addAction(button)
+
+        self.qq_captures_button = self.test_moves.addMenu("QQ captures")
+        capture_types = ['normal', 'double_jump', 'triple_jump', 'jump_over_own_pawn', 'jump_over_third_color', 'double_capture', 'jump_over_own_pawn2']
+        self.qq_capture_buttons = [Qt.QAction(capture_type) for capture_type in capture_types]
+        for button, capture_type in zip(self.qq_capture_buttons, capture_types):
+            button.triggered.connect(lambda _, b = capture_type: self.start_in_quantum_quantum_capture(type_cap = b))
+            self.qq_captures_button.addAction(button)
+
+        self.cc_captures_button = self.test_moves.addMenu("CC captures")
+        capture_types = ['normal']
+        self.cc_capture_buttons = [Qt.QAction(capture_type) for capture_type in capture_types]
+        for button, capture_type in zip(self.cc_capture_buttons, capture_types):
+            button.triggered.connect(lambda _, b = capture_type: self.start_in_classical_classical_capture(type_cap = b))
+            self.cc_captures_button.addAction(button)
+
+        self.all_pawns_button = Qt.QAction("Add one pawn per color")
+        self.all_pawns_button.triggered.connect(self.add_all_pawns_on_board)
 
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.throw_dice_button)
@@ -170,7 +197,8 @@ class Main(QMainWindow):
         self.debug_menu.addAction(self.random_turn_button)
         self.debug_menu.addAction(self.circuit_visibility_button)
         self.debug_menu.addAction(self.position_names_button)
-        self.test_moves.addAction(self.capture_move_button)
+        self.debug_menu.addAction(self.print_positions_button)
+        self.test_moves.addAction(self.all_pawns_button)
 
     def initUI(self):
         central_widget = QWidget(self)
@@ -303,7 +331,6 @@ class Main(QMainWindow):
     def game_logic(self, random_turn = False):
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
         pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
-
 
         superposition_move_options = [i for i in range(len(pawns_on_board))
                                     if pawns_on_board[i][0] == self.current_turn 
@@ -548,7 +575,19 @@ class Main(QMainWindow):
         
         self.next_turn()
 
-    def start_in_classical_capture(self):
+    def print_positions(self):
+        pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
+        pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
+        print(DataFrame(pawns_on_board, columns = ['Color','Pawn number']).T.fillna('   ').replace({np.NaN: '   '}))
+        print(DataFrame(pawns_on_spawn, columns = ['Color','Pawn number']).T.fillna('   ').replace({np.NaN: '   '}))
+        print("--------------------")
+
+
+    # ------------------------------------------------------------
+    # Preprogrammed positions
+    # ------------------------------------------------------------
+
+    def start_in_quantum_classical_capture(self, type_cap = 'normal'):
         self.reset_app()
         self.current_turn = self.colors[0]
         self.new_pawn(0, to_next_turn=False)
@@ -564,8 +603,81 @@ class Main(QMainWindow):
         
         self.game_logic()
 
-    # def add_all_pawns_on_board(self):
+    def start_in_quantum_quantum_capture(self, type_cap = 'normal'):
+        self.reset_app()
+        self.current_turn = self.colors[0]
+        self.new_pawn(0, to_next_turn=False)
+        self.die_throws = [6,6]
+        self.direct_move(26, to_next_turn = False)
+        self.current_turn = self.colors[1]
+        self.new_pawn(2, to_next_turn= False)
+        self.die_throws = [1,2]
+        self.move(2, to_next_turn=False)
+        if type_cap == 'triple_jump':
+            self.die_throws = [2,3]
+            self.move(3, to_next_turn=False)
 
+        if type_cap == 'jump_over_third_color':
+            self.current_turn = self.colors[3]
+            self.new_pawn(6, to_next_turn=False)
+            self.die_throws = [6,6]
+            self.direct_move(18, to_next_turn=False)
+            self.direct_move(24, to_next_turn=False)
+            self.die_throws = [4,4]
+            self.direct_move(30, to_next_turn=False)
+            self.die_throws = [3,4]
+            self.move(2, to_next_turn=False)
+
+        self.current_turn = self.colors[0]
+
+        if type_cap == 'double_jump':
+            self.die_throws = [1,3]
+        elif type_cap == 'triple_jump':
+            self.die_throws = [1,4]
+        elif type_cap == 'jump_over_own_pawn':
+            self.die_throws = [4,5]
+        elif type_cap == 'double_capture':
+            self.die_throws = [3,4]
+        elif type_cap == 'jump_over_own_pawn2':
+            self.new_pawn(1, to_next_turn=False)
+            self.die_throws = [5,5]
+            self.direct_move(26, to_next_turn=False)
+            self.die_throws = [6,6]
+            self.direct_move(31, to_next_turn=False)
+            self.die_throws = [1,4]
+        else:
+            self.die_throws = [1,4]
+
+        self.dice[0].setIcon(die_cons[self.die_throws[0]])
+        self.dice[1].setIcon(die_cons[self.die_throws[1]])
+        
+        self.game_logic()
+    
+    def start_in_classical_classical_capture(self, type_cap = 'normal'):
+        self.reset_app()
+        self.current_turn = self.colors[0]
+        self.new_pawn(0, to_next_turn=False)
+        self.die_throws = [6,6]
+        self.direct_move(26, to_next_turn = False)
+        self.current_turn = self.colors[1]
+        self.new_pawn(2, to_next_turn= False)
+
+        self.current_turn = self.colors[0]
+        if type_cap == 'normal':
+            self.die_throws = [2,2]
+
+        self.dice[0].setIcon(die_cons[self.die_throws[0]])
+        self.dice[1].setIcon(die_cons[self.die_throws[1]])
+        
+        self.game_logic()
+        
+    def add_all_pawns_on_board(self):
+        self.reset_app()
+        for color, i in zip(self.colors, range(len(self.colors))):
+            self.current_turn = color
+            self.new_pawn(i*2, to_next_turn=False)
+        self.current_turn = self.colors[-1]
+        self.next_turn()
     
 if __name__ in "__main__":
     app = QApplication(sys.argv)
