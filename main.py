@@ -153,6 +153,11 @@ class Main(QMainWindow):
         self.circuit_visibility_button.setShortcut("Ctrl+C")
         self.circuit_visibility_button.triggered.connect(self.circuit_visibility)
 
+        self.position_names_button = Qt.QAction("Show position names", self)
+        if self.debug:
+            self.position_names_button.setText("Remove position names")
+        self.position_names_button.triggered.connect(self.show_position_names)
+
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.throw_dice_button)
         self.debug_menu.addAction(self.measure_button)
@@ -160,6 +165,7 @@ class Main(QMainWindow):
         self.debug_menu.addAction(self.select_dice_button)
         self.debug_menu.addAction(self.random_turn_button)
         self.debug_menu.addAction(self.circuit_visibility_button)
+        self.debug_menu.addAction(self.position_names_button)
 
     def initUI(self):
         central_widget = QWidget(self)
@@ -197,7 +203,7 @@ class Main(QMainWindow):
             self.colors[3] : 18
         }
 
-        self.home_positions = [Qt.QPushButton(rf"{i if self.debug==True else ""}") for i in range(8)]
+        self.home_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(8)]
         for pos, i in zip(self.home_positions, range(8)):
             current_color = self.colors[int(np.floor(i/2))]
             pos.setFixedSize(50,50)
@@ -466,6 +472,24 @@ class Main(QMainWindow):
         else:
             self.circuitfigure.show()
             self.circuit_visibility_button.setText("Close circuit")
+
+    def show_position_names(self):
+        if self.home_positions[0].text() == "":
+            self.position_names_button.setText("Remove position names")
+            for pos,i in zip(self.home_positions, range(len(self.home_positions))):
+                pos.setText(str(i))
+            for pos,i in zip(self.board_positions, range(len(self.board_positions))):
+                pos.setText(str(i))
+            for pos,i in zip(self.final_positions, range(len(self.final_positions))):
+                pos.setText(str(i))
+        else: 
+            self.position_names_button.setText("Show position names")
+            for pos,i in zip(self.home_positions, range(len(self.home_positions))):
+                pos.setText("")
+            for pos,i in zip(self.board_positions, range(len(self.board_positions))):
+                pos.setText("")
+            for pos,i in zip(self.final_positions, range(len(self.final_positions))):
+                pos.setText("")
 
     def reset_app(self):
         # Show reset confirmation (optional)
