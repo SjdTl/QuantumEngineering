@@ -201,7 +201,6 @@ class circuit():
 
         Pawn moves from a position move_from to two positions, but one of these positions is occupied by the same pawn in superposition (namely on position merge_in)
         """
-        print(move_to, merge_in)
         if len(move_from) != 1:
             raise ValueError("Move_from must be in the from [int]; a list containing one integer")
         if len(move_to) != 2:
@@ -264,6 +263,7 @@ class circuit():
         This is used as a weight in selecting the final measurement from all the measurements using pseudo-random methods
         Also some results are filtered out to control for errors
         """
+        self.qcircuit.draw()
         
         if efficient == False:
             filtered_data = self._internal_measure(backend = backend, optimization_level=optimization_level, simulator = simulator, shots = shots)
@@ -277,9 +277,6 @@ class circuit():
             chosen_positions = random.choices(positions, weights=weights, k=1)[0]
         else:
             raise ValueError(r"Not a single measurement outcome has a probability P>0.5\% of occuring; there is probably a measurement error")
-
-        print(filtered_data)
-        print(chosen_positions)
 
         self.new_pawn(chosen_positions)
         if out_internal_measure == False:
@@ -340,7 +337,6 @@ class circuit():
 
             # Identify active qubits
             active_qubits = [qubit for qubit, count in gate_count.items() if count > 0]
-            print(active_qubits)
 
             # Create a new circuit with only active qubits
             qc_out = QuantumCircuit(len(active_qubits), len(active_qubits))
@@ -372,7 +368,7 @@ class circuit():
         result = job.result()[0]
         out_with_freq = result.data.meas.get_counts()
 
-        filter = 5 # with a shot of 1000, so if P < 0.5% the measurement is removed
+        filter = 2 # with a shot of 1000, so if P < 0.2% the measurement is removed
         filtered_data = {value/shots : [old_qubits[index] for index, char in enumerate(key[::-1]) if char == '1'] for key, value in out_with_freq.items() if value >= filter}
         self.qcircuit = QuantumCircuit(self.N)
         return filtered_data, len(active_qubits)

@@ -118,6 +118,7 @@ class Main(QMainWindow):
         self.menu = QMenuBar(self)
         self.file_menu = self.menu.addMenu("File")
         self.debug_menu = self.menu.addMenu("Debug")
+        self.test_moves = self.menu.addMenu("Moves")
         self.setMenuBar(self.menu)
         
         self.reset = Qt.QAction("Reset", self)
@@ -158,6 +159,9 @@ class Main(QMainWindow):
             self.position_names_button.setText("Remove position names")
         self.position_names_button.triggered.connect(self.show_position_names)
 
+        self.capture_move_button = Qt.QAction("Capture a classical pawn")
+        self.capture_move_button.triggered.connect(self.start_in_classical_capture)
+
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.throw_dice_button)
         self.debug_menu.addAction(self.measure_button)
@@ -166,6 +170,7 @@ class Main(QMainWindow):
         self.debug_menu.addAction(self.random_turn_button)
         self.debug_menu.addAction(self.circuit_visibility_button)
         self.debug_menu.addAction(self.position_names_button)
+        self.test_moves.addAction(self.capture_move_button)
 
     def initUI(self):
         central_widget = QWidget(self)
@@ -349,7 +354,7 @@ class Main(QMainWindow):
                     self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
                     self.board_positions[i].clicked.connect(lambda _, b=i: self.direct_move(move_from = b))
     
-    def direct_move(self, move_from):
+    def direct_move(self, move_from, to_next_turn = True):
         move_to = (move_from + self.die_throws[0]) % 32
         
         # Check for capture
@@ -365,8 +370,7 @@ class Main(QMainWindow):
                                 if self.board_positions[i].property("Color") == captured_color 
                                 and self.board_positions[i].property("Pawn") == self.board_positions[move_to].property("Pawn")
                                 and i != move_to]  # Exclude the capture position
-            if captured_positions:  # Only capture if there are entangled positions
-                self.circuit.capture([next_pos], [move_to], captured_positions)
+            self.circuit.capture([next_pos], [move_to], captured_positions)
             move_to = next_pos
 
         for prop in ["Color", "Pawn"]:
@@ -377,9 +381,10 @@ class Main(QMainWindow):
         self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
 
         self.circuit.switch([move_from], [move_to])
-        self.next_turn()
+        if to_next_turn:
+            self.next_turn()
 
-    def move(self, move_from):
+    def move(self, move_from, to_next_turn = True):
         move_to = [(move_from + self.die_throws[0]) % 32, (move_from + self.die_throws[1]) % 32]
 
                 
@@ -403,8 +408,7 @@ class Main(QMainWindow):
                                 if self.board_positions[i].property("Color") == captured_color 
                                 and self.board_positions[i].property("Pawn") == self.board_positions[capture_pos].property("Pawn")
                                 and i != capture_pos]
-            if captured_positions:
-                self.circuit.capture([next_pos], [capture_pos], captured_positions)
+            self.circuit.capture([next_pos], [capture_pos], captured_positions)
 
         if move_to[0] == move_to[1]:
             next_pos = (move_to[1] + 1) % 32
@@ -422,9 +426,10 @@ class Main(QMainWindow):
         self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
 
         self.circuit.move([move_from], move_to)
-        self.next_turn()
+        if to_next_turn:
+            self.next_turn()
 
-    def new_pawn(self, move_from):
+    def new_pawn(self, move_from, to_next_turn = True):
         move_to = self.start_position[self.current_turn]
         
         for prop in ["Color", "Pawn"]:
@@ -435,12 +440,15 @@ class Main(QMainWindow):
         self.home_positions[move_from].setStyleSheet(button_stylesheet(border_color=self.current_turn))
 
         self.circuit.new_pawn([move_to])
-        self.next_turn()
+        if to_next_turn:
+            self.next_turn()
 
     def measure_action(self):
         measure_popup = MeasurePopup()
         measure_popup.show()
         positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
+        print(nr_of_qubits_used)
+        print(out_with_freq)
         print(positions)
         for pos in range(0,len(self.board_positions)):
             if pos not in positions:
@@ -540,6 +548,17 @@ class Main(QMainWindow):
         
         self.next_turn()
 
+    def start_in_classical_capture(self):
+        self.reset_app()
+        self.current_turn = self.colors[0]
+        self.new_pawn(0, to_next_turn=False)
+        self.die_throws = [6,6]
+        self.direct_move(26, to_next_turn = False)
+        self.current_turn = self.colors[1]
+        self.new_pawn(2, to_next_turn= False)
+        self.current_turn = self.colors[0]
+        self.die_throws = [1,2]
+        self.game_logic()
     
 if __name__ in "__main__":
     app = QApplication(sys.argv)
