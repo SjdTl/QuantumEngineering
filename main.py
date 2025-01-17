@@ -137,7 +137,7 @@ class Main(QMainWindow):
         self.throw_dice_button.setEnabled(False)
 
         self.select_dice_button = Qt.QAction("Select dice", self)
-        self.select_dice_button.setShortcut("Ctrl+Alt+D")
+        self.select_dice_button.setShortcut("Ctrl+P")
         self.select_dice_button.triggered.connect(lambda: self.throw_dice(debug_throw=True))
         self.select_dice_button.setEnabled(False)
 
@@ -377,7 +377,7 @@ class Main(QMainWindow):
 
 
     def update_drawn_circuit(self):
-        self.fig = self.circuit.draw(mpl_open = False, term_draw = False)
+        self.fig = self.circuit.draw(mpl_open = False, term_draw = False, show_idle_wires=False)
         self.circuitfigure.plot(self.fig)
 
     def reset_app(self):
@@ -391,6 +391,6 @@ class Main(QMainWindow):
     
 if __name__ in "__main__":
     app = QApplication(sys.argv)
-    main = Main(debug=False)
+    main = Main(debug=True)
     main.show()
     app.exec_()

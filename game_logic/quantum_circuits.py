@@ -287,14 +287,14 @@ class circuit():
         else:
             return chosen_positions, filtered_data, nr_of_qubits_used
     
-    def draw(self, mpl_open = True, term_draw = True):
+    def draw(self, mpl_open = True, term_draw = True, show_idle_wires = True):
         """
         Description
         ------------
         Test function that draws the circuit and opens it in matplotlib if mpl_open == True
         Also prints the circuit in the terminal if term_draw == True
         """
-        fig = self.qcircuit.draw('mpl', style="iqp-dark")
+        fig = self.qcircuit.draw('mpl', style="iqp-dark", idle_wires=show_idle_wires)
         if mpl_open == True:
             plt.show()
         if term_draw ==True:
