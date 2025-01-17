@@ -168,7 +168,7 @@ class Main(QMainWindow):
 
         grid = QGridLayout()
 
-        self.board_positions = [Qt.QPushButton(rf"{i if self.debug==True else ""}") for i in range(self.N)]
+        self.board_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(self.N)]
 
         x=3
         y=0
@@ -197,7 +197,7 @@ class Main(QMainWindow):
             self.colors[3] : 18
         }
 
-        self.home_positions = [Qt.QPushButton(rf"{i if self.debug==True else ""}") for i in range(8)]
+        self.home_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(8)]
         for pos, i in zip(self.home_positions, range(8)):
             current_color = self.colors[int(np.floor(i/2))]
             pos.setFixedSize(50,50)
@@ -386,7 +386,8 @@ class Main(QMainWindow):
         for capture_idx, capture_pos in captures:
             # Find next free position after capture
             next_pos = (capture_pos + 1) % 32
-            while self.board_positions[next_pos].property("Color") is not None:
+            while (self.board_positions[next_pos].property("Color") is not None or 
+                   next_pos in move_to):  # Check if position is already a destination
                 next_pos = (next_pos + 1) % 32
             move_to[capture_idx] = next_pos
             
@@ -395,10 +396,15 @@ class Main(QMainWindow):
             captured_positions = [i for i in range(self.N) 
                                 if self.board_positions[i].property("Color") == captured_color 
                                 and self.board_positions[i].property("Pawn") == self.board_positions[capture_pos].property("Pawn")
-                                and i != capture_pos]  # Exclude the capture position
-            if captured_positions:  # Only capture if there are entangled positions
+                                and i != capture_pos]
+            if captured_positions:
                 self.circuit.capture([next_pos], [capture_pos], captured_positions)
-        
+
+        if move_to[0] == move_to[1]:
+            next_pos = (move_to[1] + 1) % 32
+            while self.board_positions[next_pos].property("Color") is not None:
+                next_pos = (next_pos + 1) % 32
+            move_to[1] = next_pos
 
         for prop in ["Color", "Pawn"]:
             self.board_positions[move_to[0]].setProperty(prop, self.board_positions[move_from].property(prop))
