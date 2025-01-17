@@ -498,12 +498,47 @@ class Main(QMainWindow):
                 pos.setText("")
 
     def reset_app(self):
-        # Show reset confirmation (optional)
-        popup = LoadingPopup(header_text = "Resetting")
-        popup.label.setText("Not implemented yet")
-        popup.exec_()
-
-        popup.close()
+        # Reset the quantum circuit completely
+        self.circuit._reset()
+        self.update_drawn_circuit()
+        
+        self.total_turns = 0
+        self.current_turn = self.colors[-1]
+        
+        for die in self.dice:
+            die.setIcon(die_cons[0])
+            die.setStyleSheet(die_stylesheet())
+            try:
+                die.clicked.disconnect()
+            except TypeError:
+                pass
+            die.clicked.connect(self.throw_dice)
+        
+        for pos in self.board_positions:
+            pos.setProperty("Color", None)
+            pos.setProperty("Pawn", None)
+            pos.setStyleSheet(button_stylesheet())
+            try:
+                pos.clicked.disconnect()
+            except TypeError:
+                pass
+        
+        
+        for i, pos in enumerate(self.home_positions):
+            current_color = self.colors[int(np.floor(i/2))]
+            pos.setProperty("Color", current_color)
+            pos.setProperty("Pawn", i % 2)  
+            pos.setStyleSheet(button_stylesheet(color=current_color))
+            try:
+                pos.clicked.disconnect()
+            except TypeError:
+                pass
+        
+        self.throw_dice_button.setEnabled(False)
+        self.select_dice_button.setEnabled(False)
+        self.random_turn_button.setEnabled(False)
+        
+        self.next_turn()
 
     
 if __name__ in "__main__":
