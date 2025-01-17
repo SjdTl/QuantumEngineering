@@ -263,7 +263,6 @@ class circuit():
         This is used as a weight in selecting the final measurement from all the measurements using pseudo-random methods
         Also some results are filtered out to control for errors
         """
-        self.qcircuit.draw()
         
         if efficient == False:
             filtered_data = self._internal_measure(backend = backend, optimization_level=optimization_level, simulator = simulator, shots = shots)

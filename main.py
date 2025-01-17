@@ -558,7 +558,14 @@ class Main(QMainWindow):
         self.new_pawn(2, to_next_turn= False)
         self.current_turn = self.colors[0]
         self.die_throws = [1,2]
+        
+        self.dice[0].setIcon(die_cons[self.die_throws[0]])
+        self.dice[1].setIcon(die_cons[self.die_throws[1]])
+        
         self.game_logic()
+
+    # def add_all_pawns_on_board(self):
+
     
 if __name__ in "__main__":
     app = QApplication(sys.argv)
