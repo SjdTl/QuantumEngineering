@@ -103,7 +103,8 @@ class Main(QMainWindow):
         self.circuitfigure = CircuitFigure()
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False)
         self.circuitfigure.plot(self.fig)
-        self.circuitfigure.show()
+        if debug:
+            self.circuitfigure.show()
 
         super().__init__()
         self.settings()
@@ -142,9 +143,15 @@ class Main(QMainWindow):
         self.select_dice_button.setEnabled(False)
 
         self.random_turn_button = Qt.QAction("Random move", self)
-        self.random_turn_button.setShortcut("ctrl+Alt+R")
+        self.random_turn_button.setShortcut("Ctrl+Alt+R")
         self.random_turn_button.triggered.connect(lambda: self.next_turn(random_turn=True))
         self.random_turn_button.setEnabled(False)
+
+        self.circuit_visibility_button = Qt.QAction("Show circuit", self)
+        if self.debug:
+            self.circuit_visibility_button.setText("Close circuit")
+        self.circuit_visibility_button.setShortcut("Ctrl+C")
+        self.circuit_visibility_button.triggered.connect(self.circuit_visibility)
 
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.throw_dice_button)
@@ -152,6 +159,7 @@ class Main(QMainWindow):
         self.debug_menu.addAction(self.skip_turn)
         self.debug_menu.addAction(self.select_dice_button)
         self.debug_menu.addAction(self.random_turn_button)
+        self.debug_menu.addAction(self.circuit_visibility_button)
 
     def initUI(self):
         central_widget = QWidget(self)
@@ -450,6 +458,14 @@ class Main(QMainWindow):
     def update_drawn_circuit(self):
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False, show_idle_wires=False)
         self.circuitfigure.plot(self.fig)
+
+    def circuit_visibility(self):
+        if self.circuitfigure.isVisible():
+            self.circuitfigure.close()
+            self.circuit_visibility_button.setText("Open circuit")
+        else:
+            self.circuitfigure.show()
+            self.circuit_visibility_button.setText("Close circuit")
 
     def reset_app(self):
         # Show reset confirmation (optional)
