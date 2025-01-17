@@ -259,14 +259,14 @@ class Main(QMainWindow):
             pos.setFixedSize(50,50)
             pos.setStyleSheet(button_stylesheet(border_color = current_color))
 
-            if i == 0: grid.addWidget(pos, 1, 4)
-            if i == 1: grid.addWidget(pos, 2, 4)
-            if i == 2: grid.addWidget(pos, 4, 7)
-            if i == 3: grid.addWidget(pos, 4, 6)
-            if i == 4: grid.addWidget(pos, 7, 4)
-            if i == 5: grid.addWidget(pos, 6, 4)
-            if i == 6: grid.addWidget(pos, 4, 1)
-            if i == 7: grid.addWidget(pos, 4, 2)
+            if i == 0: grid.addWidget(pos, 4, 1)
+            if i == 1: grid.addWidget(pos, 4, 2)
+            if i == 2: grid.addWidget(pos, 1, 4)
+            if i == 3: grid.addWidget(pos, 2, 4)
+            if i == 4: grid.addWidget(pos, 4, 7)
+            if i == 5: grid.addWidget(pos, 4, 6)
+            if i == 6: grid.addWidget(pos, 7, 4)
+            if i == 7: grid.addWidget(pos, 6, 4)
 
         number_of_dice = 2
         self.dice = [Qt.QPushButton() for _ in range(number_of_dice)]
@@ -453,6 +453,7 @@ class Main(QMainWindow):
         self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
 
         self.circuit.move([move_from], move_to)
+        
         if to_next_turn:
             self.next_turn()
 
