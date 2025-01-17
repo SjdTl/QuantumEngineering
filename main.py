@@ -10,7 +10,7 @@ from game_logic.quantum_circuits import circuit
 from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QComboBox,QPushButton, QLabel, QHBoxLayout,QVBoxLayout, QGridLayout, QMenuBar, QMainWindow, QDialog
 import PyQt5.QtWidgets as Qt
 from PyQt5 import QtCore
-from PyQt5.QtCore import QSize, QTimer
+from PyQt5.QtCore import QSize
 
 # others
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -141,11 +141,6 @@ class Main(QMainWindow):
         self.select_dice_button.triggered.connect(lambda: self.throw_dice(debug_throw=True))
         self.select_dice_button.setEnabled(False)
 
-        self.random_turn_button = Qt.QAction("Random move", self)
-        self.random_turn_button.setShortcut("ctrl+Alt+R")
-        self.random_turn_button.triggered.connect(lambda: self.next_turn(random_turn=True))
-        self.random_turn_button.setEnabled(False)
-
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.throw_dice_button)
         self.debug_menu.addAction(self.measure_button)
@@ -159,7 +154,7 @@ class Main(QMainWindow):
 
         grid = QGridLayout()
 
-        self.board_positions = [Qt.QPushButton(rf"{i if self.debug==True else ""}") for i in range(self.N)]
+        self.board_positions = [Qt.QPushButton(rf"{i}") for i in range(self.N)]
 
         x=3
         y=0
@@ -188,7 +183,7 @@ class Main(QMainWindow):
             self.colors[3] : 18
         }
 
-        self.home_positions = [Qt.QPushButton(rf"{i if self.debug==True else ""}") for i in range(8)]
+        self.home_positions = [Qt.QPushButton(rf"{i}") for i in range(8)]
         for pos, i in zip(self.home_positions, range(8)):
             current_color = self.colors[int(np.floor(i/2))]
             pos.setFixedSize(50,50)
@@ -232,26 +227,22 @@ class Main(QMainWindow):
         # show grid
         central_widget.setLayout(grid)
 
-    def next_turn(self, random_turn = False):
+    def next_turn(self):
         self.update_drawn_circuit()
+        self.total_turns += 1
+        self.current_turn = self.colors[(self.colors.index(self.current_turn)+1)%4]
         self.deselect_all_pawns()
 
-        if random_turn == False:
-            self.total_turns += 1
-            self.current_turn = self.colors[(self.colors.index(self.current_turn)+1)%4]
-            for die in self.dice:
-                die.clicked.connect(self.throw_dice)
-                die.setStyleSheet(die_stylesheet(self.current_turn))
-                die.setIcon(die_cons[0])
-                
+
+        for die in self.dice:
+            die.clicked.connect(self.throw_dice)
+            die.setStyleSheet(die_stylesheet(self.current_turn))
+            die.setIcon(die_cons[0])
         self.throw_dice_button.setEnabled(True)
         self.select_dice_button.setEnabled(True)
-        self.random_turn_button.setEnabled(True)
 
-        if random_turn == True:
-            self.throw_dice(random_turn = True)
 
-    def throw_dice(self, debug_throw = False, random_turn = False):
+    def throw_dice(self, debug_throw = False):
         if debug_throw:
             throw_menu = selectDicePopup()
             if throw_menu.exec_() == QDialog.Accepted:
@@ -271,33 +262,30 @@ class Main(QMainWindow):
             button.clicked.disconnect(self.throw_dice)
         self.throw_dice_button.setEnabled(False)
         self.select_dice_button.setEnabled(False)
-        self.random_turn_button.setEnabled(False)
 
-        if random_turn:
-            QTimer.singleShot(500, self.game_logic(random_turn = True))
-        else:
-            self.game_logic()
+        self.game_logic()
 
-
-    def game_logic(self, random_turn = False):
+    def game_logic(self):
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
         pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
 
 
         superposition_move_options = [i for i in range(len(pawns_on_board))
                                     if pawns_on_board[i][0] == self.current_turn 
-                                    and pawns_on_board[(i+self.die_throws[0])%32] == [None, None] 
-                                    and pawns_on_board[(i+self.die_throws[1])%32] == [None, None]
+                                    and ((pawns_on_board[(i+self.die_throws[0])%32][0] is None or pawns_on_board[(i+self.die_throws[0])%32][0] != self.current_turn)
+                                    and (pawns_on_board[(i+self.die_throws[1])%32][0] is None or pawns_on_board[(i+self.die_throws[1])%32][0] != self.current_turn))
                                     and self.die_throws[0] != self.die_throws[1]]
 
         new_pawn_options = [i for i in range(len(pawns_on_spawn))
                             if pawns_on_spawn[i][0] == self.current_turn
-                            and pawns_on_board[self.start_position[self.current_turn]] == [None, None]
+                            and (pawns_on_board[self.start_position[self.current_turn]][0] is None 
+                                 or pawns_on_board[self.start_position[self.current_turn]][0] != self.current_turn)
                             and 6 in self.die_throws]
 
         single_move_options = [i for i in range(len(pawns_on_board))
                                 if pawns_on_board[i][0] == self.current_turn
-                                and pawns_on_board[(i+self.die_throws[0])%32] == [None, None]
+                                and (pawns_on_board[(i+self.die_throws[0])%32][0] is None 
+                                     or pawns_on_board[(i+self.die_throws[0])%32][0] != self.current_turn)
                                 and self.die_throws[0] == self.die_throws[1]]
         
         
@@ -307,30 +295,37 @@ class Main(QMainWindow):
             popup.exec_()
             self.next_turn()
 
-        if random_turn:
-            options = [
-                lambda: self.move(move_from = random.choice(superposition_move_options)) if len(superposition_move_options) != 0 else None,
-                lambda: self.new_pawn(move_from = random.choice(new_pawn_options)) if len(new_pawn_options) != 0 else None,
-                lambda: self.direct_move(move_from = random.choice(single_move_options)) if len(single_move_options) != 0 else None,
-            ]
-            options = [option for option in options if option is not None]
-            random.choice(options)()
+        for i in superposition_move_options:
+            self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+            self.board_positions[i].clicked.connect(lambda _, b=i: self.move(move_from = b))
+        
+        for i in new_pawn_options:
+            self.home_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+            self.home_positions[i].clicked.connect(lambda _, b = i: self.new_pawn(move_from = b))
 
-        else: 
-            for i in superposition_move_options:
-                self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
-                self.board_positions[i].clicked.connect(lambda _, b=i: self.move(move_from = b))
-            
-            for i in new_pawn_options:
-                self.home_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
-                self.home_positions[i].clicked.connect(lambda _, b = i: self.new_pawn(move_from = b))
-
-            for i in single_move_options:
-                self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
-                self.board_positions[i].clicked.connect(lambda _, b=i: self.direct_move(move_from = b))
+        for i in single_move_options:
+            self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+            self.board_positions[i].clicked.connect(lambda _, b=i: self.direct_move(move_from = b))
     
     def direct_move(self, move_from):
         move_to = (move_from + self.die_throws[0]) % 32
+        
+        # Check for capture
+        if self.board_positions[move_to].property("Color") is not None and self.board_positions[move_to].property("Color") != self.current_turn:
+            # Find next free position
+            next_pos = (move_to + 1) % 32
+            while self.board_positions[next_pos].property("Color") is not None:
+                next_pos = (next_pos + 1) % 32
+            
+            # Apply quantum capture
+            captured_color = self.board_positions[move_to].property("Color")
+            captured_positions = [i for i in range(self.N) 
+                                if self.board_positions[i].property("Color") == captured_color 
+                                and self.board_positions[i].property("Pawn") == self.board_positions[move_to].property("Pawn")
+                                and i != move_to]  # Exclude the capture position
+            if captured_positions:  # Only capture if there are entangled positions
+                self.circuit.capture([next_pos], [move_to], captured_positions)
+            move_to = next_pos
 
         for prop in ["Color", "Pawn"]:
             self.board_positions[move_to].setProperty(prop, self.board_positions[move_from].property(prop))
@@ -344,7 +339,29 @@ class Main(QMainWindow):
 
     def move(self, move_from):
         move_to = [(move_from + self.die_throws[0]) % 32, (move_from + self.die_throws[1]) % 32]
-
+        
+        # Check for captures at both destination positions
+        captures = [(i, pos) for i, pos in enumerate(move_to) 
+                   if self.board_positions[pos].property("Color") is not None 
+                   and self.board_positions[pos].property("Color") != self.current_turn]
+        
+        # Handle captures and find next free positions
+        for capture_idx, capture_pos in captures:
+            # Find next free position after capture
+            next_pos = (capture_pos + 1) % 32
+            while self.board_positions[next_pos].property("Color") is not None:
+                next_pos = (next_pos + 1) % 32
+            move_to[capture_idx] = next_pos
+            
+            # Apply quantum capture in circuit
+            captured_color = self.board_positions[capture_pos].property("Color")
+            captured_positions = [i for i in range(self.N) 
+                                if self.board_positions[i].property("Color") == captured_color 
+                                and self.board_positions[i].property("Pawn") == self.board_positions[capture_pos].property("Pawn")
+                                and i != capture_pos]  # Exclude the capture position
+            if captured_positions:  # Only capture if there are entangled positions
+                self.circuit.capture([next_pos], [capture_pos], captured_positions)
+        
         for prop in ["Color", "Pawn"]:
             self.board_positions[move_to[0]].setProperty(prop, self.board_positions[move_from].property(prop))
             self.board_positions[move_to[1]].setProperty(prop, self.board_positions[move_from].property(prop))
