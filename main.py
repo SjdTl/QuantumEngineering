@@ -45,17 +45,30 @@ class selectDicePopup(QDialog):
             die.setIconSize(QSize(45,45))
             die.setFixedSize(50,50)
             die.setStyleSheet(die_stylesheet())
-            die.clicked.connect(lambda _, b=i: self.selected_die(throw=b))
+            die.clicked.connect(lambda _, b=i: self.selected_die(throw=b+1))
             grid.addWidget(die, 0, i)
         self.setLayout(grid)
 
         self.dice_selected = []
     
     def selected_die(self, throw):
-        self.dice_selected.append(self.dice_selected)
-        print(self.dice_selected)
-        
+        self.dice_selected.append(throw)
 
+        if len(self.dice_selected)==2:
+            print(self.dice_selected)
+            self.accept()
+
+class MeasurePopup(QDialog):
+    # Thought it might be fun to add an animation here
+    def __init__(self):
+        super().__init__()
+        self.setStyleSheet(stylesheet)
+        self.setWindowTitle("Measuring")
+        self.setFixedSize(600,300)
+        self.label= QLabel("MEASURING.......")
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+        self.setLayout(layout)
 
 
 class CircuitFigure(QDialog):
@@ -232,7 +245,8 @@ class Main(QMainWindow):
     def throw_dice(self, debug_throw = False):
         if debug_throw:
             throw_menu = selectDicePopup()
-            throw_menu.exec_()
+            if throw_menu.exec_() == QDialog.Accepted:
+                self.die_throws = throw_menu.dice_selected
         else: 
             ar = [1,2,3,4,5,6]
             self.die_throws = [random.choice(ar), random.choice(ar)]
@@ -333,6 +347,8 @@ class Main(QMainWindow):
         self.next_turn()
 
     def measure_action(self):
+        measure_popup = MeasurePopup()
+        measure_popup.show()
         positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
         print(positions)
         for pos in range(0,len(self.board_positions)):
@@ -341,7 +357,9 @@ class Main(QMainWindow):
                     self.board_positions[pos].setProperty(prop, None)
                 self.board_positions[pos].setStyleSheet(button_stylesheet())
 
+        measure_popup.close()
         self.next_turn()
+
 
 
     def deselect_all_pawns(self):
@@ -373,6 +391,6 @@ class Main(QMainWindow):
     
 if __name__ in "__main__":
     app = QApplication(sys.argv)
-    main = Main(debug=True)
+    main = Main(debug=False)
     main.show()
     app.exec_()
