@@ -151,6 +151,7 @@ class Main(QMainWindow):
         self.debug_menu.addAction(self.measure_button)
         self.debug_menu.addAction(self.skip_turn)
         self.debug_menu.addAction(self.select_dice_button)
+        self.debug_menu.addAction(self.random_turn_button)
 
     def initUI(self):
         central_widget = QWidget(self)
@@ -274,7 +275,8 @@ class Main(QMainWindow):
         self.random_turn_button.setEnabled(False)
 
         if random_turn:
-            QTimer.singleShot(500, self.game_logic(random_turn = True))
+            # QTimer.singleShot(500, self.game_logic(random_turn = True))
+            self.game_logic(random_turn=True)
         else:
             self.game_logic()
 
@@ -300,34 +302,36 @@ class Main(QMainWindow):
                                 and pawns_on_board[(i+self.die_throws[0])%32] == [None, None]
                                 and self.die_throws[0] == self.die_throws[1]]
         
-        
         if len(superposition_move_options + new_pawn_options + single_move_options) == 0:
-            popup = LoadingPopup(header_text = "No options")
-            popup.label.setText(rf"No options for {self.current_turn}")
-            popup.exec_()
+            if random_turn == False:
+                popup = LoadingPopup(header_text = "No options")
+                popup.label.setText(rf"No options for {self.current_turn}")
+                popup.exec_()
             self.next_turn()
-
-        if random_turn:
-            options = [
-                lambda: self.move(move_from = random.choice(superposition_move_options)) if len(superposition_move_options) != 0 else None,
-                lambda: self.new_pawn(move_from = random.choice(new_pawn_options)) if len(new_pawn_options) != 0 else None,
-                lambda: self.direct_move(move_from = random.choice(single_move_options)) if len(single_move_options) != 0 else None,
-            ]
-            options = [option for option in options if option is not None]
-            random.choice(options)()
-
         else: 
-            for i in superposition_move_options:
-                self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
-                self.board_positions[i].clicked.connect(lambda _, b=i: self.move(move_from = b))
-            
-            for i in new_pawn_options:
-                self.home_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
-                self.home_positions[i].clicked.connect(lambda _, b = i: self.new_pawn(move_from = b))
+            if random_turn:
+                options = [
+                    None if len(superposition_move_options) == 0 else lambda: self.move(move_from=random.choice(superposition_move_options)),
+                    None if len(new_pawn_options) == 0 else lambda: self.new_pawn(move_from=random.choice(new_pawn_options)),
+                    None if len(single_move_options) == 0 else lambda: self.direct_move(move_from=random.choice(single_move_options)),
+                ]
 
-            for i in single_move_options:
-                self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
-                self.board_positions[i].clicked.connect(lambda _, b=i: self.direct_move(move_from = b))
+                # Filter out `None` values
+                options = [option for option in options if option is not None]
+                random.choice(options)()
+
+            else: 
+                for i in superposition_move_options:
+                    self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                    self.board_positions[i].clicked.connect(lambda _, b=i: self.move(move_from = b))
+                
+                for i in new_pawn_options:
+                    self.home_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                    self.home_positions[i].clicked.connect(lambda _, b = i: self.new_pawn(move_from = b))
+
+                for i in single_move_options:
+                    self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                    self.board_positions[i].clicked.connect(lambda _, b=i: self.direct_move(move_from = b))
     
     def direct_move(self, move_from):
         move_to = (move_from + self.die_throws[0]) % 32
