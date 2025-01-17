@@ -337,8 +337,8 @@ class Main(QMainWindow):
     
     def direct_move(self, move_from):
         move_to = (move_from + self.die_throws[0]) % 32
-
-         # Check for capture
+        
+        # Check for capture
         if self.board_positions[move_to].property("Color") is not None and self.board_positions[move_to].property("Color") != self.current_turn:
             # Find next free position
             next_pos = (move_to + 1) % 32
@@ -355,7 +355,20 @@ class Main(QMainWindow):
                 self.circuit.capture([next_pos], [move_to], captured_positions)
             move_to = next_pos
 
-                    
+        for prop in ["Color", "Pawn"]:
+            self.board_positions[move_to].setProperty(prop, self.board_positions[move_from].property(prop))
+            self.board_positions[move_from].setProperty(prop, None)
+        
+        self.board_positions[move_to].setStyleSheet(button_stylesheet(color=self.current_turn))
+        self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
+
+        self.circuit.switch([move_from], [move_to])
+        self.next_turn()
+
+    def move(self, move_from):
+        move_to = [(move_from + self.die_throws[0]) % 32, (move_from + self.die_throws[1]) % 32]
+
+                
         # Check for captures at both destination positions
         captures = [(i, pos) for i, pos in enumerate(move_to) 
                    if self.board_positions[pos].property("Color") is not None 
@@ -377,21 +390,6 @@ class Main(QMainWindow):
                                 and i != capture_pos]  # Exclude the capture position
             if captured_positions:  # Only capture if there are entangled positions
                 self.circuit.capture([next_pos], [capture_pos], captured_positions)
-        
-
-        for prop in ["Color", "Pawn"]:
-            self.board_positions[move_to].setProperty(prop, self.board_positions[move_from].property(prop))
-            self.board_positions[move_from].setProperty(prop, None)
-        
-        self.board_positions[move_to].setStyleSheet(button_stylesheet(color=self.current_turn))
-        self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
-
-        self.circuit.switch([move_from], [move_to])
-        self.next_turn()
-
-    def move(self, move_from):
-        move_to = [(move_from + self.die_throws[0]) % 32, (move_from + self.die_throws[1]) % 32]
-
         
 
         for prop in ["Color", "Pawn"]:
