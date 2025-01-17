@@ -10,7 +10,7 @@ from game_logic.quantum_circuits import circuit
 from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QComboBox,QPushButton, QLabel, QHBoxLayout,QVBoxLayout, QGridLayout, QMenuBar, QMainWindow, QDialog
 import PyQt5.QtWidgets as Qt
 from PyQt5 import QtCore
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, QTimer
 
 # others
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -141,6 +141,11 @@ class Main(QMainWindow):
         self.select_dice_button.triggered.connect(lambda: self.throw_dice(debug_throw=True))
         self.select_dice_button.setEnabled(False)
 
+        self.random_turn_button = Qt.QAction("Random move", self)
+        self.random_turn_button.setShortcut("ctrl+Alt+R")
+        self.random_turn_button.triggered.connect(lambda: self.next_turn(random_turn=True))
+        self.random_turn_button.setEnabled(False)
+
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.throw_dice_button)
         self.debug_menu.addAction(self.measure_button)
@@ -227,22 +232,26 @@ class Main(QMainWindow):
         # show grid
         central_widget.setLayout(grid)
 
-    def next_turn(self):
+    def next_turn(self, random_turn = False):
         self.update_drawn_circuit()
-        self.total_turns += 1
-        self.current_turn = self.colors[(self.colors.index(self.current_turn)+1)%4]
         self.deselect_all_pawns()
 
-
-        for die in self.dice:
-            die.clicked.connect(self.throw_dice)
-            die.setStyleSheet(die_stylesheet(self.current_turn))
-            die.setIcon(die_cons[0])
+        if random_turn == False:
+            self.total_turns += 1
+            self.current_turn = self.colors[(self.colors.index(self.current_turn)+1)%4]
+            for die in self.dice:
+                die.clicked.connect(self.throw_dice)
+                die.setStyleSheet(die_stylesheet(self.current_turn))
+                die.setIcon(die_cons[0])
+                
         self.throw_dice_button.setEnabled(True)
         self.select_dice_button.setEnabled(True)
+        self.random_turn_button.setEnabled(True)
 
+        if random_turn == True:
+            self.throw_dice(random_turn = True)
 
-    def throw_dice(self, debug_throw = False):
+    def throw_dice(self, debug_throw = False, random_turn = False):
         if debug_throw:
             throw_menu = selectDicePopup()
             if throw_menu.exec_() == QDialog.Accepted:
@@ -262,10 +271,15 @@ class Main(QMainWindow):
             button.clicked.disconnect(self.throw_dice)
         self.throw_dice_button.setEnabled(False)
         self.select_dice_button.setEnabled(False)
+        self.random_turn_button.setEnabled(False)
 
-        self.game_logic()
+        if random_turn:
+            QTimer.singleShot(500, self.game_logic(random_turn = True))
+        else:
+            self.game_logic()
 
-    def game_logic(self):
+
+    def game_logic(self, random_turn = False):
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
         pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
 
@@ -293,17 +307,27 @@ class Main(QMainWindow):
             popup.exec_()
             self.next_turn()
 
-        for i in superposition_move_options:
-            self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
-            self.board_positions[i].clicked.connect(lambda _, b=i: self.move(move_from = b))
-        
-        for i in new_pawn_options:
-            self.home_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
-            self.home_positions[i].clicked.connect(lambda _, b = i: self.new_pawn(move_from = b))
+        if random_turn:
+            options = [
+                lambda: self.move(move_from = random.choice(superposition_move_options)) if len(superposition_move_options) != 0 else None,
+                lambda: self.new_pawn(move_from = random.choice(new_pawn_options)) if len(new_pawn_options) != 0 else None,
+                lambda: self.direct_move(move_from = random.choice(single_move_options)) if len(single_move_options) != 0 else None,
+            ]
+            options = [option for option in options if option is not None]
+            random.choice(options)()
 
-        for i in single_move_options:
-            self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
-            self.board_positions[i].clicked.connect(lambda _, b=i: self.direct_move(move_from = b))
+        else: 
+            for i in superposition_move_options:
+                self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                self.board_positions[i].clicked.connect(lambda _, b=i: self.move(move_from = b))
+            
+            for i in new_pawn_options:
+                self.home_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                self.home_positions[i].clicked.connect(lambda _, b = i: self.new_pawn(move_from = b))
+
+            for i in single_move_options:
+                self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                self.board_positions[i].clicked.connect(lambda _, b=i: self.direct_move(move_from = b))
     
     def direct_move(self, move_from):
         move_to = (move_from + self.die_throws[0]) % 32
