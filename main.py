@@ -288,18 +288,20 @@ class Main(QMainWindow):
 
         superposition_move_options = [i for i in range(len(pawns_on_board))
                                     if pawns_on_board[i][0] == self.current_turn 
-                                    and pawns_on_board[(i+self.die_throws[0])%32] == [None, None] 
-                                    and pawns_on_board[(i+self.die_throws[1])%32] == [None, None]
+                                    and ((pawns_on_board[(i+self.die_throws[0])%32][0] is None or pawns_on_board[(i+self.die_throws[0])%32][0] != self.current_turn)
+                                    and (pawns_on_board[(i+self.die_throws[1])%32][0] is None or pawns_on_board[(i+self.die_throws[1])%32][0] != self.current_turn))
                                     and self.die_throws[0] != self.die_throws[1]]
 
         new_pawn_options = [i for i in range(len(pawns_on_spawn))
                             if pawns_on_spawn[i][0] == self.current_turn
-                            and pawns_on_board[self.start_position[self.current_turn]] == [None, None]
+                            and (pawns_on_board[self.start_position[self.current_turn]][0] is None 
+                                 or pawns_on_board[self.start_position[self.current_turn]][0] != self.current_turn)
                             and 6 in self.die_throws]
 
         single_move_options = [i for i in range(len(pawns_on_board))
                                 if pawns_on_board[i][0] == self.current_turn
-                                and pawns_on_board[(i+self.die_throws[0])%32] == [None, None]
+                                and (pawns_on_board[(i+self.die_throws[0])%32][0] is None 
+                                     or pawns_on_board[(i+self.die_throws[0])%32][0] != self.current_turn)
                                 and self.die_throws[0] == self.die_throws[1]]
         
         if len(superposition_move_options + new_pawn_options + single_move_options) == 0:
@@ -336,6 +338,47 @@ class Main(QMainWindow):
     def direct_move(self, move_from):
         move_to = (move_from + self.die_throws[0]) % 32
 
+         # Check for capture
+        if self.board_positions[move_to].property("Color") is not None and self.board_positions[move_to].property("Color") != self.current_turn:
+            # Find next free position
+            next_pos = (move_to + 1) % 32
+            while self.board_positions[next_pos].property("Color") is not None:
+                next_pos = (next_pos + 1) % 32
+            
+            # Apply quantum capture
+            captured_color = self.board_positions[move_to].property("Color")
+            captured_positions = [i for i in range(self.N) 
+                                if self.board_positions[i].property("Color") == captured_color 
+                                and self.board_positions[i].property("Pawn") == self.board_positions[move_to].property("Pawn")
+                                and i != move_to]  # Exclude the capture position
+            if captured_positions:  # Only capture if there are entangled positions
+                self.circuit.capture([next_pos], [move_to], captured_positions)
+            move_to = next_pos
+
+                    
+        # Check for captures at both destination positions
+        captures = [(i, pos) for i, pos in enumerate(move_to) 
+                   if self.board_positions[pos].property("Color") is not None 
+                   and self.board_positions[pos].property("Color") != self.current_turn]
+        
+        # Handle captures and find next free positions
+        for capture_idx, capture_pos in captures:
+            # Find next free position after capture
+            next_pos = (capture_pos + 1) % 32
+            while self.board_positions[next_pos].property("Color") is not None:
+                next_pos = (next_pos + 1) % 32
+            move_to[capture_idx] = next_pos
+            
+            # Apply quantum capture in circuit
+            captured_color = self.board_positions[capture_pos].property("Color")
+            captured_positions = [i for i in range(self.N) 
+                                if self.board_positions[i].property("Color") == captured_color 
+                                and self.board_positions[i].property("Pawn") == self.board_positions[capture_pos].property("Pawn")
+                                and i != capture_pos]  # Exclude the capture position
+            if captured_positions:  # Only capture if there are entangled positions
+                self.circuit.capture([next_pos], [capture_pos], captured_positions)
+        
+
         for prop in ["Color", "Pawn"]:
             self.board_positions[move_to].setProperty(prop, self.board_positions[move_from].property(prop))
             self.board_positions[move_from].setProperty(prop, None)
@@ -348,6 +391,8 @@ class Main(QMainWindow):
 
     def move(self, move_from):
         move_to = [(move_from + self.die_throws[0]) % 32, (move_from + self.die_throws[1]) % 32]
+
+        
 
         for prop in ["Color", "Pawn"]:
             self.board_positions[move_to[0]].setProperty(prop, self.board_positions[move_from].property(prop))
