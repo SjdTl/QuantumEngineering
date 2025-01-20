@@ -275,7 +275,7 @@ class Main(QMainWindow):
             if i == 6: grid.addWidget(pos, 8, 1), pos.setProperty("Pawn", 0)
             if i == 7: grid.addWidget(pos, 7, 0), pos.setProperty("Pawn", 1)
 
-        self.final_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(32,32+8)]
+        self.final_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(0,7)]
         for i, pos in enumerate(self.final_positions):
             current_color = self.colors[int(np.floor(i/2))]
             pos.setFixedSize(50,50)
@@ -436,14 +436,7 @@ class Main(QMainWindow):
         start_position = self.start_position[self.current_turn]
         for i, move in enumerate(move_to):
             if (move_from - start_position) % 32 > 16 and (move - start_position) % 32 < 16: #this might not be the most general solution, but since the maximum movement is 6 this will work
-                spare_moves = (move - start_position + 1) % 32 
-                if spare_moves == 1 or spare_moves == 3:
-                    move_to[i] = self.final_position_values[self.current_turn][0]                 
-                elif spare_moves == 2:
-                    move_to[i] = self.final_position_values[self.current_turn][1]
-                else: 
-                    move_to[i] = (start_position-1) % 32 - (spare_moves - 4)
-                    # REQUIRES SOME EXTRA LOGIC SINCE IF MOVE_TO[i] == move_from the program will crash
+                move_to[i] = self.current_turn
         return move_to
 
     def direct_move(self, move_from, to_next_turn = True):
@@ -466,10 +459,7 @@ class Main(QMainWindow):
         # self.board_positions[move_to[0]].setStyleSheet(button_stylesheet(color=self.current_turn))
         # self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
 
-        if all(move < 32 for move in move_to):
-            self.circuit.switch([move_from], move_to)
-        else:
-            print("Move to final qubits and measure")
+        self.circuit.switch([move_from], move_to)
         if captives:
             self.circuit.capture(capture_move, captives, captive_entanglement[0])
         if to_next_turn:
@@ -543,6 +533,21 @@ class Main(QMainWindow):
                 for prop in ["Color", "Pawn"]:
                     self.board_positions[pos].setProperty(prop, None)
                 # self.board_positions[pos].setStyleSheet(button_stylesheet())
+        
+        pawns = [[pos.property("Color"), pos.property("Pawn")] for pos in self.board_positions + self.final_positions
+                if pos.property("Color") != None]
+        all_pawns = [[color, i] for i in [0,1] for color in self.colors]
+        pawns_at_spawn = [pawn for pawn in all_pawns if pawn not in pawns]
+
+        pos = self.home_positions
+        if [self.colors[0], 0] in pawns_at_spawn: pos[0].setProperty("Pawn", 0), pos[0].setProperty("Color", self.colors[0])
+        if [self.colors[0], 1] in pawns_at_spawn: pos[1].setProperty("Pawn", 1), pos[1].setProperty("Color", self.colors[0])
+        if [self.colors[1], 0] in pawns_at_spawn: pos[2].setProperty("Pawn", 0), pos[2].setProperty("Color", self.colors[1])
+        if [self.colors[1], 1] in pawns_at_spawn: pos[3].setProperty("Pawn", 1), pos[3].setProperty("Color", self.colors[1])
+        if [self.colors[2], 0] in pawns_at_spawn: pos[4].setProperty("Pawn", 0), pos[4].setProperty("Color", self.colors[2])
+        if [self.colors[2], 1] in pawns_at_spawn: pos[5].setProperty("Pawn", 1), pos[5].setProperty("Color", self.colors[2])
+        if [self.colors[3], 0] in pawns_at_spawn: pos[6].setProperty("Pawn", 0), pos[6].setProperty("Color", self.colors[3])
+        if [self.colors[3], 1] in pawns_at_spawn: pos[7].setProperty("Pawn", 1), pos[7].setProperty("Color", self.colors[3])
 
         measure_popup.close()
         self.next_turn()
