@@ -422,17 +422,6 @@ class Main(QMainWindow):
         return changing_move
     
     def check_if_moving_in_final_positions(self, move_from, move_to):
-        """ Further requirements
-        - Have two qubits extra in total for all the 8 possible end positions (since only two are used at the same time, since we always measure after a finish)
-        - When you throw 'too much' it is already implemented that you reverse, but not the capturing in reverse
-        - Something (I don't know what yet) when a final position is already occupied
-        """
-
-        self.final_position_values = {self.colors[0] : [32, 33],
-                                      self.colors[1] : [34, 35],
-                                      self.colors[2] : [36, 37],
-                                      self.colors[3] : [38, 39]}
-
         start_position = self.start_position[self.current_turn]
         for i, move in enumerate(move_to):
             if (move_from - start_position) % 32 > 16 and (move - start_position) % 32 < 16: #this might not be the most general solution, but since the maximum movement is 6 this will work
