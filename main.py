@@ -100,6 +100,7 @@ class Main(QMainWindow):
 
         self.N = 32
         self.circuit = circuit(self.N)
+        self.history = []
 
         self.circuitfigure = CircuitFigure()
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False)
@@ -125,6 +126,10 @@ class Main(QMainWindow):
         self.reset = Qt.QAction("Reset", self)
         self.reset.setShortcut("Ctrl+R")
         self.reset.triggered.connect(self.reset_app)
+
+        self.undo_button = Qt.QAction("Undo", self)
+        self.undo_button.setShortcut("Ctrl+Z")
+        self.undo_button.triggered.connect(self.undo)
 
         self.measure_button = Qt.QAction("Measure", self)
         self.measure_button.setShortcut("Ctrl+M")
@@ -204,6 +209,7 @@ class Main(QMainWindow):
             self.all_pawns_button.addAction(button)
 
         self.file_menu.addAction(self.reset)
+        self.file_menu.addAction(self.undo_button)
         self.file_menu.addAction(self.throw_dice_button)
         self.debug_menu.addAction(self.measure_button)
         self.debug_menu.addAction(self.skip_turn)
@@ -301,6 +307,7 @@ class Main(QMainWindow):
         central_widget.setLayout(grid)
 
     def next_turn(self, random_turn = False):
+        self.save()
         self.update_drawn_circuit()
         # self.deselect_all_pawns()
         self.update_stylesheets(deselect=True)
@@ -588,7 +595,33 @@ class Main(QMainWindow):
         self.setWindowTitle("Testing")
         self.setGeometry(250,250,600,500)
 
+    def save(self): 
+        self.circuit.save()
+        hp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.home_positions]
+        bp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.board_positions]
+        fp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.final_positions]
+        turn = self.current_turn
+        self.history.append([hp, bp, fp, turn])
+    
+    def undo(self):
+        self.reset_app(next_turn=False)
 
+        if len(self.history) > 1:
+            self.circuit.undo()
+            positions = self.history.pop()
+            positions = self.history.pop()
+            
+            for i, pos in enumerate(self.home_positions):
+                pos.setProperty("Pawn", positions[0][i][0])
+                pos.setProperty("Color", positions[0][i][1])
+            for i, pos in enumerate(self.board_positions):
+                pos.setProperty("Pawn", positions[1][i][0])
+                pos.setProperty("Color", positions[1][i][1])
+            for i, pos in enumerate(self.final_positions):
+                pos.setProperty("Pawn", positions[2][i][0])
+                pos.setProperty("Color", positions[2][i][1])
+
+            self.next_turn()
 
     def update_drawn_circuit(self):
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False, show_idle_wires=False)
@@ -610,7 +643,7 @@ class Main(QMainWindow):
                 for i, pos in enumerate(positions):
                     pos.setText(rf'{str(i) if show==True else ""}')
 
-    def reset_app(self):
+    def reset_app(self, next_turn = True):
         # Reset the quantum circuit completely
         self.circuit._reset()
         self.update_drawn_circuit()
@@ -651,7 +684,8 @@ class Main(QMainWindow):
         self.select_dice_button.setEnabled(False)
         self.random_turn_button.setEnabled(False)
         
-        self.next_turn()
+        if next_turn == True:
+            self.next_turn()
 
     def print_positions(self):
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]

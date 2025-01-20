@@ -38,6 +38,7 @@ class circuit():
     def __init__(self, N=32):
         self.N = N
         self.qcircuit = QuantumCircuit(self.N)
+        self.history = []
 
     def new_pawn(self, move_to : List[int]):
         """
@@ -296,7 +297,17 @@ class circuit():
         if term_draw ==True:
             print(self.qcircuit)
         return fig
-
+    
+    def save(self):
+        self.history.append(self.qcircuit.copy())
+    
+    def undo(self):
+        if len(self.history) != 0:
+            self.qcircuit = self.history.pop()
+            self.qcircuit = self.history.pop()
+        else:
+            self.reset()
+        
     def _internal_measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, shots = 1024):
         """See circuit.measure() for documentation"""
 
