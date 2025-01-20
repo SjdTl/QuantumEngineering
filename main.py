@@ -226,6 +226,7 @@ class Main(QMainWindow):
             pos.setStyleSheet(button_stylesheet())
             pos.setProperty("Color", None)
             pos.setProperty("Pawn", None)
+            pos.setProperty("Selected", False)
 
             grid.addWidget(pos, y, x)
             if (0 <= i < 2) or (5 <= i < 8) or (26 <= i < 29):
@@ -252,6 +253,7 @@ class Main(QMainWindow):
             pos.setFixedSize(50,50)
             pos.setStyleSheet(button_stylesheet(color = current_color))
             pos.setProperty("Color", current_color)
+            pos.setProperty("Selected", False)
 
 
             if i == 0: grid.addWidget(pos, 1, 0), pos.setProperty("Pawn", 0)
@@ -268,6 +270,9 @@ class Main(QMainWindow):
             current_color = self.colors[int(np.floor(i/2))]
             pos.setFixedSize(50,50)
             pos.setStyleSheet(button_stylesheet(border_color = current_color))
+            pos.setProperty("Color", None)
+            pos.setProperty("Pawn", None)
+            pos.setProperty("Selected", False)
 
             if i == 0: grid.addWidget(pos, 4, 1)
             if i == 1: grid.addWidget(pos, 4, 2)
@@ -382,14 +387,17 @@ class Main(QMainWindow):
             else: 
                 for i in superposition_move_options:
                     self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                    self.board_positions[i].setProperty("Selected", True)
                     self.board_positions[i].clicked.connect(lambda _, b=i: self.move(move_from = b))
                 
                 for i in new_pawn_options:
                     self.home_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                    self.home_positions[i].setProperty("Selected", True)
                     self.home_positions[i].clicked.connect(lambda _, b = i: self.new_pawn(move_from = b))
 
                 for i in single_move_options:
                     self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                    self.board_positions[i].setProperty("Selected", True)
                     self.board_positions[i].clicked.connect(lambda _, b=i: self.direct_move(move_from = b))
 
     def find_next_available_spot(self, changing_move, constant_move=None):
@@ -536,6 +544,26 @@ class Main(QMainWindow):
                 position.clicked.disconnect()
             except TypeError:
                 pass
+
+    def update_stylesheets(self, deselect = True):
+        for i, pos in enumerate(self.home_positions):
+            pos_color = pos.property('Color')
+            pos_pawn = pos.property('Pawn')
+            if deselect == True:
+                pos.setProperty('Select', False)
+            select = pos.property('Select')
+            pos.setStyleSheet(button_stylesheet(color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))], selected =select))
+        for pos in self.board_positions:
+            pos_color = pos.property('Color')
+            pos_pawn = pos.property('Pawn')
+            if deselect == True:
+                pos.setProperty("Select", False)
+            pos.setStyleSheet(button_stylesheet(color = pos_color, pawn = pos_pawn, selected=select))
+        for i, pos in enumerate(self.final_positions):
+            pos_color = pos.property('Color')
+            pos_pawn = pos.property("Pawn")
+            pos.setStyleSheet(button_stylesheet(color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))]))
+
 
     def settings(self):
         self.setWindowTitle("Testing")
