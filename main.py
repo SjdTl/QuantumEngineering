@@ -7,7 +7,7 @@ from game_logic.quantum_circuits import circuit
 
 # LIBRARIES
 # application from pyqt
-from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QComboBox,QPushButton, QLabel, QHBoxLayout,QVBoxLayout, QGridLayout, QMenuBar, QMainWindow, QDialog
+from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QComboBox,QPushButton, QLabel, QHBoxLayout,QVBoxLayout, QGridLayout, QMenuBar, QMainWindow, QDialog, QProgressBar
 import PyQt5.QtWidgets as Qt
 from PyQt5 import QtCore
 from PyQt5.QtCore import QSize, QTimer
@@ -100,7 +100,6 @@ class Main(QMainWindow):
 
         self.N = 32
         self.circuit = circuit(self.N)
-        self.history = []
 
         self.circuitfigure = CircuitFigure()
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False)
@@ -126,10 +125,6 @@ class Main(QMainWindow):
         self.reset = Qt.QAction("Reset", self)
         self.reset.setShortcut("Ctrl+R")
         self.reset.triggered.connect(self.reset_app)
-
-        self.undo_button = Qt.QAction("Undo", self)
-        self.undo_button.setShortcut("Ctrl+Z")
-        self.undo_button.triggered.connect(self.undo)
 
         self.measure_button = Qt.QAction("Measure", self)
         self.measure_button.setShortcut("Ctrl+M")
@@ -209,7 +204,6 @@ class Main(QMainWindow):
             self.all_pawns_button.addAction(button)
 
         self.file_menu.addAction(self.reset)
-        self.file_menu.addAction(self.undo_button)
         self.file_menu.addAction(self.throw_dice_button)
         self.debug_menu.addAction(self.measure_button)
         self.debug_menu.addAction(self.skip_turn)
@@ -297,17 +291,21 @@ class Main(QMainWindow):
         self.dice = [Qt.QPushButton() for _ in range(number_of_dice)]
         for i, die in enumerate(self.dice):
             die.setIcon(die_cons[0])
-            die.setIconSize(QSize(45,45))
-            die.setFixedSize(50,50)
+            die.setIconSize(QSize(45, 45))
+            die.setFixedSize(50, 50)
             die.setStyleSheet(die_stylesheet())
-            grid.addWidget(die, 9, i)
+            grid.addWidget(die, 9, i)  # Keep the dice in row 9
 
         self.update_stylesheets()
         # show grid
         central_widget.setLayout(grid)
 
+        # Add the progress bar to the layout
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 20)
+        grid.addWidget(self.progress_bar, 9, 2, 1, 2)  # Place it in row 9, next to the dice
+
     def next_turn(self, random_turn = False):
-        self.save()
         self.update_drawn_circuit()
         # self.deselect_all_pawns()
         self.update_stylesheets(deselect=True)
@@ -323,6 +321,9 @@ class Main(QMainWindow):
         self.throw_dice_button.setEnabled(True)
         self.select_dice_button.setEnabled(True)
         self.random_turn_button.setEnabled(True)
+
+        # Update the progress bar after the turn
+        self.update_progress_bar()
 
         if random_turn == True:
             self.throw_dice(random_turn = True)
@@ -360,6 +361,14 @@ class Main(QMainWindow):
         self.update_stylesheets(deselect=True)
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
         pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
+
+        # Count occupied positions on the board
+        occupied_positions_count = sum(1 for position in pawns_on_board if position[0] is not None)
+
+        # Automatically measure if 20 or more positions are occupied
+        if occupied_positions_count >= 20:
+            self.measure_action()
+            return  # Exit the method after measuring
 
         superposition_move_options = [i for i in range(len(pawns_on_board))
                                     if pawns_on_board[i][0] == self.current_turn 
@@ -545,6 +554,7 @@ class Main(QMainWindow):
                 # self.board_positions[pos].setStyleSheet(button_stylesheet())
 
         measure_popup.close()
+        self.progress_bar.setValue(0)
         self.next_turn()
 
 
@@ -592,33 +602,7 @@ class Main(QMainWindow):
         self.setWindowTitle("Testing")
         self.setGeometry(250,250,600,500)
 
-    def save(self): 
-        self.circuit.save()
-        hp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.home_positions]
-        bp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.board_positions]
-        fp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.final_positions]
-        turn = self.current_turn
-        self.history.append([hp, bp, fp, turn])
-    
-    def undo(self):
-        self.reset_app(next_turn=False)
 
-        if len(self.history) > 1:
-            self.circuit.undo()
-            positions = self.history.pop()
-            positions = self.history.pop()
-            
-            for i, pos in enumerate(self.home_positions):
-                pos.setProperty("Pawn", positions[0][i][0])
-                pos.setProperty("Color", positions[0][i][1])
-            for i, pos in enumerate(self.board_positions):
-                pos.setProperty("Pawn", positions[1][i][0])
-                pos.setProperty("Color", positions[1][i][1])
-            for i, pos in enumerate(self.final_positions):
-                pos.setProperty("Pawn", positions[2][i][0])
-                pos.setProperty("Color", positions[2][i][1])
-
-            self.next_turn()
 
     def update_drawn_circuit(self):
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False, show_idle_wires=False)
@@ -640,7 +624,7 @@ class Main(QMainWindow):
                 for i, pos in enumerate(positions):
                     pos.setText(rf'{str(i) if show==True else ""}')
 
-    def reset_app(self, next_turn = True):
+    def reset_app(self):
         # Reset the quantum circuit completely
         self.circuit._reset()
         self.update_drawn_circuit()
@@ -681,8 +665,7 @@ class Main(QMainWindow):
         self.select_dice_button.setEnabled(False)
         self.random_turn_button.setEnabled(False)
         
-        if next_turn == True:
-            self.next_turn()
+        self.next_turn()
 
     def print_positions(self):
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
@@ -827,6 +810,15 @@ class Main(QMainWindow):
         self.current_turn = self.colors[-1]
         self.next_turn()
     
+    def update_progress_bar(self):
+        """Update progress bar to reflect the number of occupied positions (up to 20)."""
+        occupied_positions_count = sum(
+            1 for pos in self.board_positions if pos.property("Color") is not None
+        )
+        # Cap at 20:
+        occupied_positions_count = min(occupied_positions_count, 20)
+        self.progress_bar.setValue(occupied_positions_count)
+
 if __name__ in "__main__":
     app = QApplication(sys.argv)
     main = Main(debug=True)
