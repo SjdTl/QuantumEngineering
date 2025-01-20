@@ -416,13 +416,10 @@ class Main(QMainWindow):
         self.update_stylesheets(deselect=False)
 
     def find_next_available_spot(self, changing_move, constant_move=None):
-            if changing_move == constant_move or constant_move == None:
-                constant_move = changing_move
-
-                while self.board_positions[changing_move].property("Color") is not None:
-                    changing_move=(changing_move+1)%32
-                
-            return changing_move
+        while (self.board_positions[changing_move].property("Color") is not None 
+            or (constant_move is not None and changing_move == constant_move)):
+            changing_move = (changing_move + 1) % 32
+        return changing_move
     
     def check_if_moving_in_final_positions(self, move_from, move_to):
         """ Further requirements
