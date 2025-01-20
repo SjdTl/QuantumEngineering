@@ -208,6 +208,13 @@ class Main(QMainWindow):
             button.triggered.connect(lambda _, b = position: self.add_all_pawns_on_board(position = b))
             self.all_pawns_button.addAction(button)
 
+        self.finish_positions_button = self.test_moves.addMenu("Finish positions")
+        finish_types = ['single_move', 'single_capture_finish', 'single_from_super', 'single_win']
+        self.finish_position_buttons = [Qt.QAction(finish_type) for finish_type in finish_types]
+        for button, finish_type in zip(self.finish_position_buttons, finish_types):
+            button.triggered.connect(lambda _, b = finish_type: self.start_in_finish_positions(fin_type = b))
+            self.finish_positions_button.addAction(button)
+
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.undo_button)
         self.file_menu.addAction(self.throw_dice_button)
@@ -334,6 +341,7 @@ class Main(QMainWindow):
 
         if random_turn == True:
             self.throw_dice(random_turn = True)
+        
 
     def throw_dice(self, debug_throw = False, random_turn = False):
         if debug_throw:
@@ -458,6 +466,8 @@ class Main(QMainWindow):
         capture_move = self.check_if_moving_in_final_positions(move_from, capture_move)
         move_to = normal_move + capture_move
 
+        final_pos : int
+
         if self.current_turn in move_to:
             for prop in ["Color", "Pawn"]:
                 pawn = self.board_positions[move_from].property("Pawn")
@@ -478,8 +488,12 @@ class Main(QMainWindow):
 
         if captives:
             self.circuit.capture(capture_move, captives, captive_entanglement[0])
-        if to_next_turn:
-            self.next_turn()
+        if move_to[0] < 32:
+            if to_next_turn:
+                self.next_turn()
+        else:
+            self.update_stylesheets(deselect=True)
+            QTimer.singleShot(500, lambda : self.measure_action(final_position = final_pos))
 
     def move(self, move_from, to_next_turn = True):
         move_to = [(move_from + self.die_throws[0]) % 32, (move_from + self.die_throws[1]) % 32]
@@ -550,8 +564,10 @@ class Main(QMainWindow):
                 for prop in ["Color", "Pawn"]:
                     self.board_positions[pos].setProperty(prop, None)
                 # self.board_positions[pos].setStyleSheet(button_stylesheet())
-        if 32 in positions or 33 in positions:
-            print("a")
+        if final_position != None:
+            if not(32 in positions or 33 in positions):
+                self.final_positions[final_position].setProperty("Color", None)
+                self.final_positions[final_position].setProperty("Pawn", None)
         
         pawns = [[pos.property("Color"), pos.property("Pawn")] for pos in self.board_positions + self.final_positions
                 if pos.property("Color") != None]
@@ -570,7 +586,20 @@ class Main(QMainWindow):
 
         measure_popup.close()
         self.progress_bar.setValue(0)
-        self.next_turn()
+        if self.win() == False:
+            self.next_turn()
+
+    def win(self):
+        final_position_colors = [pos.property("Color") for pos in self.final_positions]
+        if any(final_position_colors.count(color) == 2 for color in self.colors):
+            self.update_stylesheets()
+            popup = LoadingPopup(header_text = "Win")
+            popup.label.setText(rf"{self.current_turn} has won")
+            popup.exec_()
+            self.reset_app()
+            return True
+        else:
+            return False
 
 
 
@@ -753,7 +782,7 @@ class Main(QMainWindow):
         
         self.dice[0].setIcon(die_cons[self.die_throws[0]])
         self.dice[1].setIcon(die_cons[self.die_throws[1]])
-        
+        self.save()
         self.game_logic()
 
     def start_in_quantum_quantum_capture(self, type_cap = 'normal'):
@@ -803,7 +832,7 @@ class Main(QMainWindow):
 
         self.dice[0].setIcon(die_cons[self.die_throws[0]])
         self.dice[1].setIcon(die_cons[self.die_throws[1]])
-        
+        self.save()
         self.game_logic()
     
     def start_in_classical_classical_capture(self, type_cap = 'normal'):
@@ -823,7 +852,7 @@ class Main(QMainWindow):
 
         self.dice[0].setIcon(die_cons[self.die_throws[0]])
         self.dice[1].setIcon(die_cons[self.die_throws[1]])
-        
+        self.save()
         self.game_logic()
 
     def start_in_classical_quantum_capture(self, type_cap = 'normal'):
@@ -854,7 +883,7 @@ class Main(QMainWindow):
 
         self.dice[0].setIcon(die_cons[self.die_throws[0]])
         self.dice[1].setIcon(die_cons[self.die_throws[1]])
-        
+        self.save()
         self.game_logic()
         
     def add_all_pawns_on_board(self, position = 0):
@@ -864,6 +893,38 @@ class Main(QMainWindow):
             self.new_pawn(i*2, optional_move_to=(self.start_position[color] + int(32*position))%32, to_next_turn=False)
         self.current_turn = self.colors[-1]
         self.next_turn()
+
+    def start_in_finish_positions(self, fin_type = 'normal'):
+        self.reset_app()
+        if fin_type == 'single_move':
+            self.new_pawn(0, optional_move_to=24, to_next_turn=False)
+            self.new_pawn(1, optional_move_to=22, to_next_turn=False)
+            self.die_throws = [4,4]
+        if fin_type == 'single_capture_finish':
+            self.new_pawn(0,9,False)
+            self.current_turn = self.colors[2]
+            self.new_pawn(5,7,False)
+            self.die_throws = [2,2]
+        if fin_type == 'single_from_super':
+            self.new_pawn(0, 23, False)
+            self.die_throws = [1,2]
+            self.move(23, False)
+            self.die_throws = [5,5]
+        if fin_type == 'single_win':
+            self.final_positions[4].setProperty("Color", self.colors[2])
+            self.final_positions[4].setProperty("Pawn", 0)
+            self.final_positions[1].setProperty("Color", self.colors[0])
+            self.final_positions[1].setProperty("Pawn", 1)
+            self.new_pawn(0,23, False)
+            self.new_pawn(5, 8, False)
+            self.measure_action()
+            self.current_turn = self.colors[2] 
+            self.die_throws = [4,4]
+
+        self.dice[0].setIcon(die_cons[self.die_throws[0]])
+        self.dice[1].setIcon(die_cons[self.die_throws[1]])
+        self.save()
+        self.game_logic()
     
     def update_progress_bar(self):
         """Update progress bar to reflect the number of occupied positions (up to 20)."""
