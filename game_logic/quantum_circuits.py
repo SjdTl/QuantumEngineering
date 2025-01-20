@@ -36,7 +36,7 @@ class circuit():
     >>> [3,5,29]
     """
     def __init__(self, N=32):
-        self.N = N
+        self.N = N + 2
         self.qcircuit = QuantumCircuit(self.N)
         self.history = []
 

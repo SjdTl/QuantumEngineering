@@ -100,6 +100,7 @@ class Main(QMainWindow):
 
         self.N = 32
         self.circuit = circuit(self.N)
+        self.history = []
 
         self.circuitfigure = CircuitFigure()
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False)
@@ -125,6 +126,10 @@ class Main(QMainWindow):
         self.reset = Qt.QAction("Reset", self)
         self.reset.setShortcut("Ctrl+R")
         self.reset.triggered.connect(self.reset_app)
+
+        self.undo_button = Qt.QAction("Undo", self)
+        self.undo_button.setShortcut("Ctrl+Z")
+        self.undo_button.triggered.connect(self.undo)
 
         self.measure_button = Qt.QAction("Measure", self)
         self.measure_button.setShortcut("Ctrl+M")
@@ -204,6 +209,7 @@ class Main(QMainWindow):
             self.all_pawns_button.addAction(button)
 
         self.file_menu.addAction(self.reset)
+        self.file_menu.addAction(self.undo_button)
         self.file_menu.addAction(self.throw_dice_button)
         self.debug_menu.addAction(self.measure_button)
         self.debug_menu.addAction(self.skip_turn)
@@ -306,6 +312,7 @@ class Main(QMainWindow):
         grid.addWidget(self.progress_bar, 9, 2, 1, 2)  # Place it in row 9, next to the dice
 
     def next_turn(self, random_turn = False):
+        self.save()
         self.update_drawn_circuit()
         # self.deselect_all_pawns()
         self.update_stylesheets(deselect=True)
@@ -447,17 +454,28 @@ class Main(QMainWindow):
                                 and move != i] for move in captives]
         capture_move = list(map(lambda move: self.find_next_available_spot(move, None), captives))
         
+        normal_move = self.check_if_moving_in_final_positions(move_from, normal_move)
+        capture_move = self.check_if_moving_in_final_positions(move_from, capture_move)
         move_to = normal_move + capture_move
-        move_to = self.check_if_moving_in_final_positions(move_from, move_to)
 
-        for prop in ["Color", "Pawn"]:
-            self.board_positions[move_to[0]].setProperty(prop, self.board_positions[move_from].property(prop))
-            self.board_positions[move_from].setProperty(prop, None)
+        if self.current_turn in move_to:
+            for prop in ["Color", "Pawn"]:
+                pawn = self.board_positions[move_from].property("Pawn")
+                final_pos = self.colors.index(self.current_turn) * 2 + pawn
+                self.final_positions[final_pos].setProperty(prop, self.board_positions[move_from].property(prop))
+                self.board_positions[move_from].setProperty(prop, None)
+            move_to = [self.N] 
+            capture_move = [self.N]
+        else:
+            for prop in ["Color", "Pawn"]:
+                self.board_positions[move_to[0]].setProperty(prop, self.board_positions[move_from].property(prop))
+                self.board_positions[move_from].setProperty(prop, None)
+        
+        self.circuit.switch([move_from], move_to)
         
         # self.board_positions[move_to[0]].setStyleSheet(button_stylesheet(color=self.current_turn))
         # self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
 
-        self.circuit.switch([move_from], move_to)
         if captives:
             self.circuit.capture(capture_move, captives, captive_entanglement[0])
         if to_next_turn:
@@ -476,8 +494,9 @@ class Main(QMainWindow):
         if len(captives) != 0:
             capture_move[0] = self.find_next_available_spot(changing_move=capture_move[0], constant_move=(normal_move[0] if len(captives) == 1 else capture_move[1]))
 
+        normal_move = self.check_if_moving_in_final_positions(move_from, normal_move)
+        capture_move = self.check_if_moving_in_final_positions(move_from, capture_move)
         move_to = normal_move + capture_move
-        move_to = self.check_if_moving_in_final_positions(move_from, move_to)
 
         self.circuit.move(move_from = [move_from], move_to = move_to)
 
@@ -519,7 +538,7 @@ class Main(QMainWindow):
         if to_next_turn:
             self.next_turn()
 
-    def measure_action(self):
+    def measure_action(self, final_position = None):
         measure_popup = MeasurePopup()
         measure_popup.show()
         positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
@@ -531,6 +550,8 @@ class Main(QMainWindow):
                 for prop in ["Color", "Pawn"]:
                     self.board_positions[pos].setProperty(prop, None)
                 # self.board_positions[pos].setStyleSheet(button_stylesheet())
+        if 32 in positions or 33 in positions:
+            print("a")
         
         pawns = [[pos.property("Color"), pos.property("Pawn")] for pos in self.board_positions + self.final_positions
                 if pos.property("Color") != None]
@@ -602,6 +623,36 @@ class Main(QMainWindow):
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False, show_idle_wires=False)
         self.circuitfigure.plot(self.fig)
 
+    def save(self): 
+        hp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.home_positions]
+        bp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.board_positions]
+        fp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.final_positions]
+        turn = self.current_turn
+        to_save = [hp, bp, fp, turn]
+        if len(self.history) == 0 or self.history[-1][0:2] != to_save[0:2]:
+            self.history.append(to_save)
+            self.circuit.save()
+    
+    def undo(self):
+        self.reset_app(next_turn=False)
+
+        if len(self.history) > 1:
+            self.circuit.undo()
+            positions = self.history.pop()
+            positions = self.history.pop()
+            
+            for i, pos in enumerate(self.home_positions):
+                pos.setProperty("Pawn", positions[0][i][0])
+                pos.setProperty("Color", positions[0][i][1])
+            for i, pos in enumerate(self.board_positions):
+                pos.setProperty("Pawn", positions[1][i][0])
+                pos.setProperty("Color", positions[1][i][1])
+            for i, pos in enumerate(self.final_positions):
+                pos.setProperty("Pawn", positions[2][i][0])
+                pos.setProperty("Color", positions[2][i][1])
+            self.current_turn = positions[3]
+            self.next_turn()
+
     def circuit_visibility(self):
         if self.circuitfigure.isVisible():
             self.circuitfigure.close()
@@ -618,7 +669,7 @@ class Main(QMainWindow):
                 for i, pos in enumerate(positions):
                     pos.setText(rf'{str(i) if show==True else ""}')
 
-    def reset_app(self):
+    def reset_app(self, next_turn = True):
         # Reset the quantum circuit completely
         self.circuit._reset()
         self.update_drawn_circuit()
@@ -653,13 +704,23 @@ class Main(QMainWindow):
             except TypeError:
                 pass
 
+        for i, pos in enumerate(self.final_positions):
+            pos.setProperty("Color", None)
+            pos.setProperty("Pawn", None)  
+            try:
+                pos.clicked.disconnect()
+            except TypeError:
+                pass
+
         self.update_stylesheets(deselect=True)
         
         self.throw_dice_button.setEnabled(False)
         self.select_dice_button.setEnabled(False)
         self.random_turn_button.setEnabled(False)
         
-        self.next_turn()
+        if next_turn == True:
+            self.next_turn()
+
 
     def print_positions(self):
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
