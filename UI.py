@@ -34,7 +34,7 @@ stylesheet  ="""
             QLabel, QLineEdit { margin : 0px; padding: 0px; }
             """
 
-def button_stylesheet(color="transparent", border_color='white', selected = False, pawn = 0):
+def button_stylesheet(button, color="transparent", border_color='white', selected = False, pawn = 0):
         stylesheet = rf"""
             QPushButton {{
                 border-radius: 25px; /* Half of the width/height */
@@ -45,7 +45,7 @@ def button_stylesheet(color="transparent", border_color='white', selected = Fals
                 border : 4px solid {border_color};
                 }}
             """
-        return stylesheet
+        button.setStyleSheet(stylesheet)
 
 def die_stylesheet(color="transparent"):
      return rf"""

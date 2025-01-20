@@ -153,6 +153,9 @@ class Main(QMainWindow):
         self.print_positions_button.triggered.connect(self.print_positions)
         self.print_positions_button.setShortcut("Ctrl+Alt+P")
 
+        self.print_move_options_button = Qt.QAction("Print move options", self)
+        self.print_move_options_button.triggered.connect(self.print_all_options)
+
         self.circuit_visibility_button = Qt.QAction("Show circuit", self)
         if self.debug:
             self.circuit_visibility_button.setText("Close circuit")
@@ -209,6 +212,7 @@ class Main(QMainWindow):
         self.debug_menu.addAction(self.circuit_visibility_button)
         self.debug_menu.addAction(self.position_names_button)
         self.debug_menu.addAction(self.print_positions_button)
+        self.debug_menu.addAction(self.print_move_options_button)
 
     def initUI(self):
         central_widget = QWidget(self)
@@ -223,7 +227,7 @@ class Main(QMainWindow):
         y=0
         for i, pos in enumerate(self.board_positions):
             pos.setFixedSize(50, 50)
-            pos.setStyleSheet(button_stylesheet())
+            # pos.setStyleSheet(button_stylesheet())
             pos.setProperty("Color", None)
             pos.setProperty("Pawn", None)
             pos.setProperty("Selected", False)
@@ -251,7 +255,7 @@ class Main(QMainWindow):
         for i, pos in enumerate(self.home_positions):
             current_color = self.colors[int(np.floor(i/2))]
             pos.setFixedSize(50,50)
-            pos.setStyleSheet(button_stylesheet(color = current_color))
+            # pos.setStyleSheet(button_stylesheet(color = current_color))
             pos.setProperty("Color", current_color)
             pos.setProperty("Selected", False)
 
@@ -269,7 +273,7 @@ class Main(QMainWindow):
         for i, pos in enumerate(self.final_positions):
             current_color = self.colors[int(np.floor(i/2))]
             pos.setFixedSize(50,50)
-            pos.setStyleSheet(button_stylesheet(border_color = current_color))
+            # pos.setStyleSheet(button_stylesheet(border_color = current_color))
             pos.setProperty("Color", None)
             pos.setProperty("Pawn", None)
             pos.setProperty("Selected", False)
@@ -292,12 +296,14 @@ class Main(QMainWindow):
             die.setStyleSheet(die_stylesheet())
             grid.addWidget(die, 9, i)
 
+        self.update_stylesheets()
         # show grid
         central_widget.setLayout(grid)
 
     def next_turn(self, random_turn = False):
         self.update_drawn_circuit()
-        self.deselect_all_pawns()
+        # self.deselect_all_pawns()
+        self.update_stylesheets(deselect=True)
 
         if random_turn == False:
             self.total_turns += 1
@@ -344,6 +350,7 @@ class Main(QMainWindow):
 
 
     def game_logic(self, random_turn = False):
+        self.update_stylesheets(deselect=True)
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
         pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
 
@@ -364,7 +371,7 @@ class Main(QMainWindow):
                                 and self.die_throws[0] == self.die_throws[1]]
         
         all_options = [superposition_move_options, new_pawn_options, single_move_options]
-
+        self.all_options = all_options
 
         if all(len(option) == 0 for option in all_options):
             if random_turn == False:
@@ -386,19 +393,20 @@ class Main(QMainWindow):
 
             else: 
                 for i in superposition_move_options:
-                    self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                    # self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
                     self.board_positions[i].setProperty("Selected", True)
                     self.board_positions[i].clicked.connect(lambda _, b=i: self.move(move_from = b))
                 
                 for i in new_pawn_options:
-                    self.home_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                    # self.home_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
                     self.home_positions[i].setProperty("Selected", True)
                     self.home_positions[i].clicked.connect(lambda _, b = i: self.new_pawn(move_from = b))
 
                 for i in single_move_options:
-                    self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
+                    # self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
                     self.board_positions[i].setProperty("Selected", True)
                     self.board_positions[i].clicked.connect(lambda _, b=i: self.direct_move(move_from = b))
+        self.update_stylesheets(deselect=False)
 
     def find_next_available_spot(self, changing_move, constant_move=None):
             if changing_move == constant_move or constant_move == None:
@@ -451,8 +459,8 @@ class Main(QMainWindow):
             self.board_positions[move_to[0]].setProperty(prop, self.board_positions[move_from].property(prop))
             self.board_positions[move_from].setProperty(prop, None)
         
-        self.board_positions[move_to[0]].setStyleSheet(button_stylesheet(color=self.current_turn))
-        self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
+        # self.board_positions[move_to[0]].setStyleSheet(button_stylesheet(color=self.current_turn))
+        # self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
 
         if all(move < 32 for move in move_to):
             self.circuit.switch([move_from], move_to)
@@ -489,9 +497,9 @@ class Main(QMainWindow):
             self.board_positions[move_to[1]].setProperty(prop, self.board_positions[move_from].property(prop))
             self.board_positions[move_from].setProperty(prop, None)
         
-        self.board_positions[move_to[0]].setStyleSheet(button_stylesheet(color=self.current_turn))
-        self.board_positions[move_to[1]].setStyleSheet(button_stylesheet(color=self.current_turn))
-        self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
+        # self.board_positions[move_to[0]].setStyleSheet(button_stylesheet(color=self.current_turn))
+        # self.board_positions[move_to[1]].setStyleSheet(button_stylesheet(color=self.current_turn))
+        # self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
 
         if to_next_turn: 
             self.next_turn()
@@ -508,8 +516,8 @@ class Main(QMainWindow):
             self.board_positions[move_to].setProperty(prop, self.home_positions[move_from].property(prop))
             self.home_positions[move_from].setProperty(prop, None)
 
-        self.board_positions[move_to].setStyleSheet(button_stylesheet(color=self.current_turn))
-        self.home_positions[move_from].setStyleSheet(button_stylesheet(border_color=self.current_turn))
+        # self.board_positions[move_to].setStyleSheet(button_stylesheet(color=self.current_turn))
+        # self.home_positions[move_from].setStyleSheet(button_stylesheet(border_color=self.current_turn))
 
         self.circuit.new_pawn([move_to])
 
@@ -530,39 +538,49 @@ class Main(QMainWindow):
             if pos not in positions:
                 for prop in ["Color", "Pawn"]:
                     self.board_positions[pos].setProperty(prop, None)
-                self.board_positions[pos].setStyleSheet(button_stylesheet())
+                # self.board_positions[pos].setStyleSheet(button_stylesheet())
 
         measure_popup.close()
         self.next_turn()
 
 
 
-    def deselect_all_pawns(self):
-        for position in self.board_positions + self.home_positions:
-            position.setStyleSheet(button_stylesheet(color=position.property("Color")))
-            try:
-                position.clicked.disconnect()
-            except TypeError:
-                pass
+    # def deselect_all_pawns(self):
+    #     for position in self.board_positions + self.home_positions:
+    #         position.setStyleSheet(button_stylesheet(color=position.property("Color")))
+    #         try:
+    #             position.clicked.disconnect()
+    #         except TypeError:
+    #             pass
 
     def update_stylesheets(self, deselect = True):
+        print(deselect)
         for i, pos in enumerate(self.home_positions):
             pos_color = pos.property('Color')
             pos_pawn = pos.property('Pawn')
             if deselect == True:
-                pos.setProperty('Select', False)
-            select = pos.property('Select')
-            pos.setStyleSheet(button_stylesheet(color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))], selected =select))
+                try:
+                    pos.clicked.disconnect()
+                except TypeError:
+                    pass
+                pos.setProperty('Selected', False)
+            select = pos.property('Selected')
+            button_stylesheet(pos, color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))] if pos_color == None else 'White', selected =select)
         for pos in self.board_positions:
             pos_color = pos.property('Color')
             pos_pawn = pos.property('Pawn')
             if deselect == True:
-                pos.setProperty("Select", False)
-            pos.setStyleSheet(button_stylesheet(color = pos_color, pawn = pos_pawn, selected=select))
+                try:
+                    pos.clicked.disconnect()
+                except TypeError:
+                    pass
+                select = pos.setProperty("Selected", False)
+            select = pos.property("Selected")
+            button_stylesheet(pos, color = pos_color, pawn = pos_pawn, selected=select)
         for i, pos in enumerate(self.final_positions):
             pos_color = pos.property('Color')
             pos_pawn = pos.property("Pawn")
-            pos.setStyleSheet(button_stylesheet(color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))]))
+            button_stylesheet(pos, color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))])
 
 
     def settings(self):
@@ -611,7 +629,6 @@ class Main(QMainWindow):
         for pos in self.board_positions:
             pos.setProperty("Color", None)
             pos.setProperty("Pawn", None)
-            pos.setStyleSheet(button_stylesheet())
             try:
                 pos.clicked.disconnect()
             except TypeError:
@@ -622,11 +639,12 @@ class Main(QMainWindow):
             current_color = self.colors[int(np.floor(i/2))]
             pos.setProperty("Color", current_color)
             pos.setProperty("Pawn", i % 2)  
-            pos.setStyleSheet(button_stylesheet(color=current_color))
             try:
                 pos.clicked.disconnect()
             except TypeError:
                 pass
+
+        self.update_stylesheets(deselect=True)
         
         self.throw_dice_button.setEnabled(False)
         self.select_dice_button.setEnabled(False)
@@ -639,6 +657,12 @@ class Main(QMainWindow):
         pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
         print(DataFrame(pawns_on_board, columns = ['Color','Pawn number']).T.fillna('   ').replace({np.NaN: '   '}))
         print(DataFrame(pawns_on_spawn, columns = ['Color','Pawn number']).T.fillna('   ').replace({np.NaN: '   '}))
+        print("--------------------")
+
+    def print_all_options(self):
+        option_names = ["superposition_move_options", "new_pawn_options", "single_move_options"]
+        for i in range(0,3):
+            print(option_names[i], self.all_options[i])
         print("--------------------")
 
 
