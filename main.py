@@ -935,7 +935,7 @@ class Main(QMainWindow):
         occupied_positions_count = min(occupied_positions_count, 20)
         self.progress_bar.setValue(occupied_positions_count)
 
-if __name__ in "__main__":
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     main = Main(debug=True)
     main.show()
