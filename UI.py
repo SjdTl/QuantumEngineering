@@ -34,16 +34,27 @@ stylesheet  ="""
             QLabel, QLineEdit { margin : 0px; padding: 0px; }
             """
 
-def button_stylesheet(button, color="transparent", border_color='white', selected = False, pawn = 0):
+def button_stylesheet(button, color="transparent", border_color='white', selected = False, pawn = 0, classical = True):
+        quantum_transparency = 100
+        color_rgba = {
+                    'Red': rf"rgba(255, 0, 0, {255 if classical==True else quantum_transparency})",
+                    'Blue': rf"rgba(0, 0, 255, {255 if classical==True else quantum_transparency})",
+                    'Purple': rf"rgba(128, 0, 128, {255 if classical==True else quantum_transparency})",
+                    'Green': rf"rgba(0, 150, 0, {255 if classical==True else quantum_transparency})",
+                    None: "transparent",
+                    "transparent" : "transparent"
+                }
+
+
         stylesheet = rf"""
             QPushButton {{
                 border-radius: 25px; /* Half of the width/height */
-                background-color : {color if color != None else 'transparent'};
-                border : {6 if selected == True else 2}px solid {border_color};
+                background-color: {color_rgba[color]};
+                border: {6 if selected == True else 2}px {"dashed" if pawn == 0 else ""} solid {border_color};
             }}
             QPushButton:hover {{
-                border : 4px solid {border_color};
-                }}
+                border: 4px solid {border_color};
+            }}
             """
         button.setStyleSheet(stylesheet)
 

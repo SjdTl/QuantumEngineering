@@ -242,7 +242,7 @@ class Main(QMainWindow):
             if (18 <= i < 21) or (24 <= i < 26) or (29 <= i <= 31):  # 29 <= i <= 31 is valid
                 y -= 1
 
-        self.colors = ['red', 'green', 'blue', 'purple'] # MUST BE FOUR COLOURS
+        self.colors = ['Red', 'Green', 'Blue', 'Purple'] # MUST BE FOUR COLOURS
         self.current_turn = self.colors[-1]
         self.start_position = {
             self.colors[0] : 26,
@@ -554,7 +554,6 @@ class Main(QMainWindow):
     #             pass
 
     def update_stylesheets(self, deselect = True):
-        print(deselect)
         for i, pos in enumerate(self.home_positions):
             pos_color = pos.property('Color')
             pos_pawn = pos.property('Pawn')
@@ -576,7 +575,9 @@ class Main(QMainWindow):
                     pass
                 select = pos.setProperty("Selected", False)
             select = pos.property("Selected")
-            button_stylesheet(pos, color = pos_color, pawn = pos_pawn, selected=select)
+            classical = len([pos for pos in (self.board_positions) if 
+                             pos_pawn == pos.property("Pawn") and pos_color == pos.property("Color")]) == 1
+            button_stylesheet(pos, color = pos_color, pawn = pos_pawn, selected=select, classical = classical)
         for i, pos in enumerate(self.final_positions):
             pos_color = pos.property('Color')
             pos_pawn = pos.property("Pawn")
@@ -655,8 +656,8 @@ class Main(QMainWindow):
     def print_positions(self):
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
         pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
-        print(DataFrame(pawns_on_board, columns = ['Color','Pawn number']).T.fillna('   ').replace({np.NaN: '   '}))
-        print(DataFrame(pawns_on_spawn, columns = ['Color','Pawn number']).T.fillna('   ').replace({np.NaN: '   '}))
+        print(DataFrame(pawns_on_board, columns = ['Color','Pawn number']).T.fillna('   ').replace({np.nan: '   '}))
+        print(DataFrame(pawns_on_spawn, columns = ['Color','Pawn number']).T.fillna('   ').replace({np.nan: '   '}))
         print("--------------------")
 
     def print_all_options(self):
