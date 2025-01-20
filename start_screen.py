@@ -3,17 +3,17 @@ from PyQt5.QtGui import QIcon, QFont, QPixmap
 from PyQt5.QtCore import Qt
 import sys
 import os
-from main import Main  # Assuming Main is in a separate module as in your original code
+from main import Main 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 stylesheet = """
 QWidget {
-    background-color: #333; /* Light blue background */
+    background-color: #333;
 }
 
 QPushButton {
-    background-color: #4682B4; /* Steel blue for buttons */
+    background-color: #4682B4;
     color: white;
     font-size: 20px;
     border-radius: 15px;

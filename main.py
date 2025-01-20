@@ -9,7 +9,9 @@ from game_logic.quantum_circuits import circuit
 # application from pyqt
 from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QComboBox,QPushButton, QLabel, QHBoxLayout,QVBoxLayout, QGridLayout, QMenuBar, QMainWindow, QDialog, QProgressBar
 import PyQt5.QtWidgets as Qt
-from PyQt5 import QtCore
+from PyQt5.QtWidgets import QSizePolicy
+from PyQt5.QtGui import QIcon
+import PyQt5.QtCore as Qtc
 from PyQt5.QtCore import QSize, QTimer
 
 # others
@@ -32,6 +34,32 @@ class LoadingPopup(QDialog):
         self.label = QLabel("")
         layout.addWidget(self.label)
         self.setLayout(layout)
+
+class WinPopup(QDialog):
+    def __init__(self, color: str):
+        super().__init__()
+        self.setWindowTitle(rf"{color} has won")
+        self.setFixedSize(300, 200)
+
+        # Directly use QWidget as the dialog's content
+        central_widget = QWidget(self)
+
+        # Create a label for the popup
+        self.label = QLabel(rf"{color} has won", central_widget)
+        self.label.setAlignment(Qtc.Qt.AlignCenter)  # This should work now
+        self.label.setGeometry(50, 20, 200, 30)
+
+        # Set the stylesheet
+        self.setStyleSheet(stylesheet)
+
+        # Create a button with the pawn icon
+        winner = QPushButton(central_widget)
+        winner.setIcon(QIcon(os.path.join(dir_path, "UI figures", rf"{color}_pawn.svg")))
+        winner.setFixedSize(100, 100)
+        winner.setIconSize(winner.size())
+        winner.setGeometry(100, 50, 100, 100)
+
+    
 
 class selectDicePopup(QDialog):
     def __init__(self):
@@ -92,6 +120,9 @@ class CircuitFigure(QDialog):
         self.canvas.figure = self.figure
         self.canvas.draw()
         plt.close()
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.canvas.updateGeometry()
 
 class Main(QMainWindow):
     def __init__(self, simulation = True, debug = False):
@@ -319,10 +350,17 @@ class Main(QMainWindow):
         grid.addWidget(self.progress_bar, 9, 2, 1, 2)  # Place it in row 9, next to the dice
 
     def next_turn(self, random_turn = False):
-        self.save()
         self.update_drawn_circuit()
         # self.deselect_all_pawns()
         self.update_stylesheets(deselect=True)
+        # Count occupied positions on the board
+        occupied_positions_count = sum(1 for pos in self.board_positions if pos.property("Color") is not None)
+        # Automatically measure if 20 or more positions are occupied
+        if occupied_positions_count >= 20:
+            QTimer.singleShot(500, lambda : self.measure_action(next_turn=False))
+            return  # Exit the method after measuring
+        self.save()
+
 
         if random_turn == False:
             self.total_turns += 1
@@ -377,13 +415,8 @@ class Main(QMainWindow):
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
         pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
 
-        # Count occupied positions on the board
-        occupied_positions_count = sum(1 for position in pawns_on_board if position[0] is not None)
-
-        # Automatically measure if 20 or more positions are occupied
-        if occupied_positions_count >= 20:
-            self.measure_action()
-            return  # Exit the method after measuring
+        
+        
 
         superposition_move_options = [i for i in range(len(pawns_on_board))
                                     if pawns_on_board[i][0] == self.current_turn 
@@ -552,7 +585,7 @@ class Main(QMainWindow):
         if to_next_turn:
             self.next_turn()
 
-    def measure_action(self, final_position = None):
+    def measure_action(self, final_position = None, next_turn = True):
         measure_popup = MeasurePopup()
         measure_popup.show()
         positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
@@ -586,15 +619,14 @@ class Main(QMainWindow):
 
         measure_popup.close()
         self.progress_bar.setValue(0)
-        if self.win() == False:
+        if self.win() == False or next_turn == False:
             self.next_turn()
 
     def win(self):
         final_position_colors = [pos.property("Color") for pos in self.final_positions]
         if any(final_position_colors.count(color) == 2 for color in self.colors):
             self.update_stylesheets()
-            popup = LoadingPopup(header_text = "Win")
-            popup.label.setText(rf"{self.current_turn} has won")
+            popup = WinPopup(self.current_turn)
             popup.exec_()
             self.reset_app()
             return True
