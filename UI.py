@@ -1,6 +1,31 @@
 import os as os
 from PyQt5.QtGui import QIcon
 
+"""
+Stylesheet description
+
+QWidget: specifies default color scheme in game and winner pop-up
+    Dark grey background; white text
+
+QMenuBar: specifies color scheme of the menu bar at the top of the window (file, debug, moves)
+    Slightly lighter grey background; white text
+
+QMenuBar::menu:hover: specifies color directly surrounding the menu items
+    Same as QMenuBar
+
+QMenu: specifies color scheme of the drop down menus of the menu items
+    Even lighter grey background; white text
+
+QMenu::item:hover: specifies color scheme when mouse hovering over items
+    Light blue background; white text
+
+QMenu::item:pressed: specifies color scheme when drop down menu item is pressed
+    Dark blue background; white text
+
+QLabel: specifies margin and padding around text in pop-ups
+    margin: 0px; padding: 0px
+"""
+
 stylesheet  ="""
             QWidget {
                 background-color: #333; /* Darker background color */
@@ -35,6 +60,33 @@ stylesheet  ="""
             """
 
 def button_stylesheet(button, color="transparent", border_color='white', selected = False, pawn = 0, classical = True):
+        """
+        Description
+
+        Specifies color and transparency of a position on the board and border response to:
+        1. being occupied
+        2. being hovered over
+        3. being available for a move
+
+        -----------
+
+        quantum_transparency: transparency when position is not 100% occupied
+
+        color_rgba: 
+            color depends on player occupying position
+            not occupied: fully transparent
+            100% occupied: fully opaque
+            superposition: partially transparent
+
+        stylesheet: 
+            specifies default border radius
+            implements background color
+            if player turn:
+                before dice roll: positions occupied by player -> dashed border
+                after dice roll: positions available for movement -> thick border
+            if hover over position: semi-thick border
+        """
+
         quantum_transparency = 100
         color_rgba = {
                     'Red': rf"rgba(255, 0, 0, {255 if classical==True else quantum_transparency})",
@@ -59,7 +111,20 @@ def button_stylesheet(button, color="transparent", border_color='white', selecte
         button.setStyleSheet(stylesheet)
 
 def die_stylesheet(color="transparent"):
-     return rf"""
+        """
+        Description
+     
+        Specifies visual effects of the dice boxes (bottom left on the screen)
+
+        -----------
+
+        Border color depends on who's turn it is
+
+        Default border width: 2px
+        Border width when hovering over die box: 4px
+        """
+
+        return rf"""
             QPushButton {{
                 border : 2px solid {color};
             }}
@@ -68,6 +133,7 @@ def die_stylesheet(color="transparent"):
                 }}
             """
 
+# Get images of dice to display in the dice boxes
 dir_path = os.path.dirname(os.path.realpath(__file__))
 die_cons = [QIcon(((os.path.join(dir_path, "UI figures", str(number) + '.svg')))) for number in range(0,7)]
     
