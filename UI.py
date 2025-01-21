@@ -1,62 +1,37 @@
 import os as os
 from PyQt5.QtGui import QIcon
 
-"""
-Stylesheet description
-
-QWidget: specifies default color scheme in game and winner pop-up
-    Dark grey background; white text
-
-QMenuBar: specifies color scheme of the menu bar at the top of the window (file, debug, moves)
-    Slightly lighter grey background; white text
-
-QMenuBar::menu:hover: specifies color directly surrounding the menu items
-    Same as QMenuBar
-
-QMenu: specifies color scheme of the drop down menus of the menu items
-    Even lighter grey background; white text
-
-QMenu::item:hover: specifies color scheme when mouse hovering over items
-    Light blue background; white text
-
-QMenu::item:pressed: specifies color scheme when drop down menu item is pressed
-    Dark blue background; white text
-
-QLabel: specifies margin and padding around text in pop-ups
-    margin: 0px; padding: 0px
-"""
-
 stylesheet  ="""
-            QWidget {
+            QWidget { /* specifies default color scheme in game and winner pop-up */
                 background-color: #333; /* Darker background color */
                 color: #fff; /* Text color */
             }
 
-            QMenuBar {
+            QMenuBar {  /* specifies color scheme of the menu bar at the top of the window (file, debug, moves) */
                 background-color: #444; /* Menu bar background color */
                 color: #fff; /* Text color */
             }
 
-            QMenuBar::menu:hover {
+            QMenuBar::menu:hover { /* specifies color directly surrounding the menu items */
                 background-color: #444; /* Menu item background color */
             }
                                 
-            QMenu {
+            QMenu { /* specifies color scheme of the drop down menus of the menu items */
                 background-color: #555; /* Default background for the menu */
                 border: 1px solid #555; /* Border for the menu */
             }
 
-            QMenu::item:hover {
+            QMenu::item:hover { /* specifies color scheme when mouse hovering over items */
                 background-color: #0066cc; /* Hover effect for menu items */
                 color: #fff; /* Text color on hover */
             }
 
-            QMenu::item:pressed {
+            QMenu::item:pressed { /* specifies color scheme when drop down menu item is pressed */
                 background-color: #0066cc; /* Pressed state background */
                 color: #fff; /* Text color on press */
             }
                            
-            QLabel, QLineEdit { margin : 0px; padding: 0px; }
+            QLabel, QLineEdit { margin : 0px; padding: 0px; } /* specifies margin and padding around text in pop-ups */
             """
 
 def button_stylesheet(button, color="transparent", border_color='white', selected = False, pawn = 0, classical = True):

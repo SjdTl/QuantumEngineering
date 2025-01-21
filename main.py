@@ -30,9 +30,23 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class LoadingPopup(QDialog):
     """
-    
-    """
+    Description
+    -----------
+    General class for a popup window with some text
 
+    Parameters
+    ----------
+    header_text : str
+        Text displayed as header name
+
+    Examples
+    --------
+    popup = LoadingPopup(header_text = "Loading")
+    popup.label.setText(rf"Loading")
+    popup.exec_()
+
+    >>> Creates a popup with as header_text "Loading" and text inside the popup "Loading"
+    """
     def __init__(self, header_text : str):
         super().__init__()
         self.setWindowTitle(header_text)
@@ -43,6 +57,21 @@ class LoadingPopup(QDialog):
         self.setLayout(layout)
 
 class WinPopup(QDialog):
+    """
+    Description
+    -----------
+    Popup window for when a player wins. Contains the pawn of the player who won and a text saying who won
+
+    Parameters
+    ----------
+    color : str
+        Color of who won
+
+    Examples
+    --------
+    popup = WinPopup('red)
+    popup.exec_()
+    """
     def __init__(self, color: str):
         super().__init__()
         self.setWindowTitle(rf"{color} has won")
@@ -69,6 +98,26 @@ class WinPopup(QDialog):
     
 
 class selectDicePopup(QDialog):
+    """
+    Description
+    -----------
+    Debug popup window in which the user can select the two die throws.
+    When calling the exec_() method, the dice selected are stored in the attribute `dice_selected`.
+
+    Methods
+    ----------
+    __init__ : Define the layout of the popup: 6 dice next to eachother
+    selected_die : Method to store the selected die in the attribute `dice_selected` after clicking on a die
+
+    Examples
+    --------
+    throw_menu = selectDicePopup()
+    if throw_menu.exec_() == QDialog.Accepted:
+        die_throws = throw_menu.dice_selected
+    print(die_throws)
+
+    >>> [1, 2] # after selecting die 1 and 2
+    """
     def __init__(self):
         super().__init__()
         self.setStyleSheet(stylesheet)
@@ -95,7 +144,7 @@ class selectDicePopup(QDialog):
             self.accept()
 
 class MeasurePopup(QDialog):
-    # Thought it might be fun to add an animation here
+    """Popup during measurement"""
     def __init__(self):
         super().__init__()
         self.setStyleSheet(stylesheet)
@@ -108,6 +157,25 @@ class MeasurePopup(QDialog):
 
 
 class CircuitFigure(QDialog):
+    """
+    Description
+    -----------
+    General class for a popup window with a matplotlib figure. The figure can be updated with another figure
+    by calling the method `plot` with the new figure as argument
+    
+    Methods
+    ----------
+    __init__ : Define the layout of the popup: a matplotlib figure
+    plot : Method to update the canvas with a new figure
+    
+    Examples
+    --------
+    circuit = circuit(32)
+    circuitfigure = CircuitFigure()
+    fig = circuit.draw(mpl_open = False, term_draw = False)
+    circuitfigure.plot(self.fig)
+    circuitfigure.show()
+    """
     def __init__(self):
         super().__init__()
         self.setStyleSheet(stylesheet)
@@ -132,7 +200,20 @@ class CircuitFigure(QDialog):
         self.canvas.updateGeometry()
 
 class Main(QMainWindow):
+    """Main class for the game: UI and classical game logic"""
     def __init__(self, simulation = True, debug = False):
+        """
+        Description
+        -----------
+        Initialize the main class for the game: start up the UI, settings and quantum circuit
+
+        Parameters
+        ----------
+        simulation : Boolean
+            If True, the quantum circuit is simulated using AerSimulator(). If False, the quantum circuit is run on a real quantum computer
+        debug : Boolean
+            If True, the game is in debug mode. This is not very different from normal mode, except that some debug features are already enabled, but can be toggled on and off
+        """
         self.simulation = simulation
         self.debug = debug
 
@@ -154,6 +235,7 @@ class Main(QMainWindow):
         self.next_turn()
 
     def window(self):
+        """Creates the top left menu bar containg some file options (undo, screenshot, reset), debug options (measure, selecting dice, autoplay) and some standard moves for testing"""
         # Menu bar
         self.menu = QMenuBar(self)
         self.file_menu = self.menu.addMenu("File")
@@ -271,19 +353,53 @@ class Main(QMainWindow):
         self.debug_menu.addAction(self.print_move_options_button)
 
     def initUI(self):
+        """
+        Description
+        -----------
+        Build the board, the dice, the progress bar and the pawns in the home and final positions
+        
+        Created widgets
+        ----------------
+        self.board_positions : list of QPushButtons
+            List of buttons representing the positions (0-32) on the board
+        self.home_positions : list of QPushButtons
+            List of buttons representing the home positions (0-8) of the pawns
+        self.final_positions : list of QPushButtons
+            List of buttons representing the final positions (0-8) of the pawns
+        self.dice : list of QPushButtons
+            List of buttons representing the two dice
+        
+        Note
+        ----
+        The position buttons all have three properties: "Color", "Pawn" and "Selected", which represent:
+            - "Color": the color of the pawn at that position. None if no pawn is present
+            - "Pawn": the number (0 or 1) of the pawn at that position. None if no pawn is present
+            - "Selected": a boolean indicating if the pawn is at a position where it can be moved
+        This code does not style the buttons. This is done in the method `update_stylesheets` using these three properties
+        The game logic also uses these same properties to determine the possible moves
+
+        Example
+        --------
+        # The second red pawn is present at position 2 on the board
+        self.board_positions[2].setProperty("Color", "Red")
+        self.board_positions[2].setProperty("Pawn", 1)
+        self.board_positions[2].setProperty("Selected", False)
+        """
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
         self.setStyleSheet(stylesheet)
 
         grid = QGridLayout()
 
+        # ----------------
+        # Create the board
+        # ----------------
         self.board_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(self.N)]
 
         x=3
         y=0
         for i, pos in enumerate(self.board_positions):
             pos.setFixedSize(50, 50)
-            # pos.setStyleSheet(button_stylesheet())
             pos.setProperty("Color", None)
             pos.setProperty("Pawn", None)
             pos.setProperty("Selected", False)
@@ -298,6 +414,9 @@ class Main(QMainWindow):
             if (18 <= i < 21) or (24 <= i < 26) or (29 <= i <= 31):  # 29 <= i <= 31 is valid
                 y -= 1
 
+        # ---------------------------------------------------------------------------------------------------------------------
+        # Initialize the colours and the position that they occupy after going out of the home position (after throwing a 6)
+        # ---------------------------------------------------------------------------------------------------------------------
         self.colors = ['Red', 'Green', 'Blue', 'Purple'] # MUST BE FOUR COLOURS
         self.current_turn = self.colors[-1]
         self.start_position = {
@@ -307,6 +426,9 @@ class Main(QMainWindow):
             self.colors[3] : 18
         }
 
+        # -------------------------
+        # Create the home positions
+        # -------------------------
         self.home_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(8)]
         for i, pos in enumerate(self.home_positions):
             current_color = self.colors[int(np.floor(i/2))]
@@ -325,6 +447,9 @@ class Main(QMainWindow):
             if i == 6: grid.addWidget(pos, 8, 1), pos.setProperty("Pawn", 0)
             if i == 7: grid.addWidget(pos, 7, 0), pos.setProperty("Pawn", 1)
 
+        # ---------------------------
+        # Create the final positions
+        # ---------------------------
         self.final_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(8)]
         for i, pos in enumerate(self.final_positions):
             current_color = self.colors[int(np.floor(i/2))]
@@ -343,6 +468,9 @@ class Main(QMainWindow):
             if i == 6: grid.addWidget(pos, 7, 4)
             if i == 7: grid.addWidget(pos, 6, 4)
 
+        # ---------------
+        # Create the dice
+        # ---------------
         number_of_dice = 2
         self.dice = [Qt.QPushButton() for _ in range(number_of_dice)]
         for i, die in enumerate(self.dice):
@@ -350,29 +478,37 @@ class Main(QMainWindow):
             die.setIconSize(QSize(45, 45))
             die.setFixedSize(50, 50)
             die.setStyleSheet(die_stylesheet())
-            grid.addWidget(die, 9, i)  # Keep the dice in row 9
+            grid.addWidget(die, 9, i)
 
-        self.update_stylesheets()
-        # show grid
-        central_widget.setLayout(grid)
+        self.update_stylesheets() # Style the buttons
+
 
         # Add the progress bar to the layout
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 20)
-        grid.addWidget(self.progress_bar, 9, 2, 1, 2)  # Place it in row 9, next to the dice
+        grid.addWidget(self.progress_bar, 9, 2, 1, 2)  # next to the dice
+
+        central_widget.setLayout(grid)
 
     def next_turn(self, random_turn = False):
+        """
+        Description
+        -----------
+        Method to switch to the next turn. This method is called after a player has made a move.
+        - Redraw the circuit
+        - Update stylesheets
+        - Potentially measure the circuit (if therre are more than 20 pawns on the board)
+        - Save the game
+        - Give turn to the next color
+        - Go to the throw_dice method
+        """
         self.update_drawn_circuit()
-        # self.deselect_all_pawns()
         self.update_stylesheets(deselect=True)
-        # Count occupied positions on the board
         occupied_positions_count = sum(1 for pos in self.board_positions if pos.property("Color") is not None)
-        # Automatically measure if 20 or more positions are occupied
         if occupied_positions_count >= 20:
             QTimer.singleShot(500, lambda : self.measure_action(next_turn=False))
             return  # Exit the method after measuring
         self.save()
-
 
         if random_turn == False:
             self.total_turns += 1
@@ -386,7 +522,6 @@ class Main(QMainWindow):
         self.select_dice_button.setEnabled(True)
         self.random_turn_button.setEnabled(True)
 
-        # Update the progress bar after the turn
         self.update_progress_bar()
 
         if random_turn == True:
@@ -394,6 +529,7 @@ class Main(QMainWindow):
         
 
     def throw_dice(self, debug_throw = False, random_turn = False):
+        """Throw dice (randomly if debug_throw is False, otherwise let the user select the dice) and move on to the game logic"""
         if debug_throw:
             throw_menu = selectDicePopup()
             if throw_menu.exec_() == QDialog.Accepted:
@@ -416,19 +552,35 @@ class Main(QMainWindow):
         self.random_turn_button.setEnabled(False)
 
         if random_turn:
-            QTimer.singleShot(250, lambda : self.game_logic(random_turn = True))
-            # self.game_logic(random_turn=True)
+            # Wait 250 ms before starting the game logic after a random turn.
+            # This is more clear for the player to see what happens
+            QTimer.singleShot(250, lambda : self.game_logic(random_turn = True)) 
         else:
             self.game_logic()
 
 
     def game_logic(self, random_turn = False):
+        """
+        Description
+        -----------
+        Game logic to determine the possible moves for the current player and make the buttons clickable for the player to make a move
+        - Determine the possible moves, which can be three possible types:
+            - superposition move: move a pawn into a superposition (for example: |100⟩ -> |010⟩ + |001⟩)
+            - new pawn move: move a pawn from the home position to the board (|0⟩ -> |1⟩)
+            - single move: move a pawn from one position to another (for example: q1 SWAP q2)
+        - Make the buttons clickable for the player to make a move or select one randomly if random_turn == True
+        """
+        # --------------------
+        # Find pawn properties
+        # --------------------
         self.update_stylesheets(deselect=True)
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
         pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
 
         
-        
+        # -------------------
+        # Find possible moves
+        # -------------------
 
         superposition_move_options = [i for i in range(len(pawns_on_board))
                                     if pawns_on_board[i][0] == self.current_turn 
@@ -449,6 +601,10 @@ class Main(QMainWindow):
         all_options = [superposition_move_options, new_pawn_options, single_move_options]
         self.all_options = all_options
 
+        # ------------------------------------------------
+        # Make buttons clickable or select a move randomly
+        # ------------------------------------------------
+
         if all(len(option) == 0 for option in all_options):
             if random_turn == False:
                 popup = LoadingPopup(header_text = "No options")
@@ -462,35 +618,35 @@ class Main(QMainWindow):
                     None if len(new_pawn_options) == 0 else lambda: self.new_pawn(move_from=random.choice(new_pawn_options)),
                     None if len(single_move_options) == 0 else lambda: self.direct_move(move_from=random.choice(single_move_options)),
                 ]
-
                 # Filter out `None` values
                 options = [option for option in options if option is not None]
                 random.choice(options)()
-
             else: 
                 for i in superposition_move_options:
-                    # self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
                     self.board_positions[i].setProperty("Selected", True)
                     self.board_positions[i].clicked.connect(lambda _, b=i: self.move(move_from = b))
-                
                 for i in new_pawn_options:
-                    # self.home_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
                     self.home_positions[i].setProperty("Selected", True)
                     self.home_positions[i].clicked.connect(lambda _, b = i: self.new_pawn(move_from = b))
-
                 for i in single_move_options:
-                    # self.board_positions[i].setStyleSheet(button_stylesheet(color=self.current_turn, selected=True))
                     self.board_positions[i].setProperty("Selected", True)
                     self.board_positions[i].clicked.connect(lambda _, b=i: self.direct_move(move_from = b))
         self.update_stylesheets(deselect=False)
 
     def find_next_available_spot(self, changing_move, constant_move=None):
+        """
+        Test if the position to move to is occupied (this happens for example when capturing a pawn)
+        If this is the case, find the next possible position to move to
+        When moving the pawn into a superposition, the pawn can overlap with itself.
+        To find the next possible position in this case provide the two arguments
+        """
         while (self.board_positions[changing_move].property("Color") is not None 
             or (constant_move is not None and changing_move == constant_move)):
             changing_move = (changing_move + 1) % 32
         return changing_move
     
     def check_if_moving_in_final_positions(self, move_from, move_to):
+        """Check if the move_to position is beyond the final_position for a color on a board. If so, move to the final position"""
         start_position = self.start_position[self.current_turn]
         for i, move in enumerate(move_to):
             if (move_from - start_position) % 32 > 16 and (move - start_position) % 32 < 16: #this might not be the most general solution, but since the maximum movement is 6 this will work
@@ -498,6 +654,7 @@ class Main(QMainWindow):
         return move_to
 
     def direct_move(self, move_from, to_next_turn = True):
+        """Move a pawn from one position to another and potentially capture another pawn"""
         move_to = [(move_from + self.die_throws[0]) % 32]
         captives = [pos for pos in move_to if self.board_positions[pos].property("Color") != None]
         normal_move = [pos for pos in move_to if self.board_positions[pos].property("Color") is None]
@@ -528,9 +685,6 @@ class Main(QMainWindow):
         
         self.circuit.switch([move_from], move_to)
         
-        # self.board_positions[move_to[0]].setStyleSheet(button_stylesheet(color=self.current_turn))
-        # self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
-
         if captives:
             self.circuit.capture(capture_move, captives, captive_entanglement[0])
         if move_to[0] < 32:
@@ -541,6 +695,7 @@ class Main(QMainWindow):
             QTimer.singleShot(500, lambda : self.measure_action(final_position = final_pos))
 
     def move(self, move_from, to_next_turn = True):
+        """Move a pawn from one position to two others (in a superposition) and potentially capture another or two other pawns"""
         move_to = [(move_from + self.die_throws[0]) % 32, (move_from + self.die_throws[1]) % 32]
         captives = [pos for pos in move_to if self.board_positions[pos].property("Color") != None]
         normal_move = [pos for pos in move_to if self.board_positions[pos].property("Color") is None]
@@ -570,7 +725,6 @@ class Main(QMainWindow):
                 normal_move = list(map(lambda x: 32 if x == self.current_turn else x, normal_move))
                 capture_move = list(map(lambda x: 33 if x == self.current_turn else x, capture_move))
         move_to = normal_move + capture_move
-        print(move_to)
         pawn = self.board_positions[move_from].property("Pawn")
         color = self.board_positions[move_from].property("Color")
         final_pos = self.colors.index(self.current_turn) * 2 + pawn
@@ -604,6 +758,7 @@ class Main(QMainWindow):
             QTimer.singleShot(500, lambda : self.measure_action(final_position = final_pos))
 
     def new_pawn(self, move_from, optional_move_to = None, to_next_turn = True):
+        """Move a pawn from the home position to the board and potentially capture another pawn"""
         move_to_original = self.start_position[self.current_turn] if optional_move_to == None else optional_move_to
         move_to = self.find_next_available_spot(move_to_original)
         captive_entanglement = [i for i in range(0,32)
@@ -615,9 +770,6 @@ class Main(QMainWindow):
             self.board_positions[move_to].setProperty(prop, self.home_positions[move_from].property(prop))
             self.home_positions[move_from].setProperty(prop, None)
 
-        # self.board_positions[move_to].setStyleSheet(button_stylesheet(color=self.current_turn))
-        # self.home_positions[move_from].setStyleSheet(button_stylesheet(border_color=self.current_turn))
-
         self.circuit.new_pawn([move_to])
 
         if move_to != move_to_original:
@@ -627,22 +779,32 @@ class Main(QMainWindow):
             self.next_turn()
 
     def measure_action(self, final_position = None, next_turn = True):
+        """Measure the circuit and update the board accordingly"""
+        # -------
+        # Measure
+        # -------
         measure_popup = MeasurePopup()
         measure_popup.show()
         positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
         print(nr_of_qubits_used)
         print(out_with_freq)
         print(positions)
+
+        # ---------------------------------
+        # Remove pawns that no longer exist
+        # ---------------------------------
         for pos in range(0,len(self.board_positions)):
             if pos not in positions:
                 for prop in ["Color", "Pawn"]:
                     self.board_positions[pos].setProperty(prop, None)
-                # self.board_positions[pos].setStyleSheet(button_stylesheet())
         if final_position != None:
             if not(32 in positions or 33 in positions):
                 self.final_positions[final_position].setProperty("Color", None)
                 self.final_positions[final_position].setProperty("Pawn", None)
-        
+
+        # -------------------------------------------------------------------
+        # Check if a pawn was captured and put it back into its home position
+        # -------------------------------------------------------------------
         pawns = [[pos.property("Color"), pos.property("Pawn")] for pos in self.board_positions + self.final_positions
                 if pos.property("Color") != None]
         all_pawns = [[color, i] for i in [0,1] for color in self.colors]
@@ -664,6 +826,7 @@ class Main(QMainWindow):
             self.next_turn()
 
     def win(self):
+        """Check if a player has won the game. If so, show WinPopup() and reset the game"""
         final_position_colors = [pos.property("Color") for pos in self.final_positions]
         if any(final_position_colors.count(color) == 2 for color in self.colors):
             self.update_stylesheets()
@@ -674,17 +837,24 @@ class Main(QMainWindow):
         else:
             return False
 
-
-
-    # def deselect_all_pawns(self):
-    #     for position in self.board_positions + self.home_positions:
-    #         position.setStyleSheet(button_stylesheet(color=position.property("Color")))
-    #         try:
-    #             position.clicked.disconnect()
-    #         except TypeError:
-    #             pass
-
     def update_stylesheets(self, deselect = True):
+        """
+        Description
+        -----------
+        Update the stylesheets of the buttons to reflect the current state of the game. This is done using 
+        the properties connected to each position.
+
+        Parameters
+        ----------
+        deselect : boolean
+            If true, disconnect all active buttons and set the "Selected" property to False.
+        
+        Notes
+        -----
+        For updating the stylesheets more than the three properties are used. The color of the pawns are also determined
+        based on being classical or quantum (in a superposition). This is calculated in this function.
+        Similarily the border colour also depends on if a button is filled with a pawn.
+        """
         for i, pos in enumerate(self.home_positions):
             pos_color = pos.property('Color')
             pos_pawn = pos.property('Pawn')
@@ -719,13 +889,12 @@ class Main(QMainWindow):
         self.setWindowTitle("Testing")
         self.setGeometry(250,250,600,500)
 
-
-
     def update_drawn_circuit(self):
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False, show_idle_wires=False)
         self.circuitfigure.plot(self.fig)
 
     def save(self): 
+        """Save the current state of the game to the history list and save the circuit to be used by undo()"""
         hp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.home_positions]
         bp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.board_positions]
         fp = [[pos.property("Pawn"), pos.property("Color")] for pos in self.final_positions]
@@ -736,6 +905,7 @@ class Main(QMainWindow):
             self.circuit.save()
     
     def undo(self):
+        """Undo the last move and reset the game to the previous state using the saved history"""
         self.reset_app(next_turn=False)
 
         if len(self.history) > 1:
@@ -756,6 +926,7 @@ class Main(QMainWindow):
             self.next_turn()
 
     def circuit_visibility(self):
+        """Show or hide the circuit figure"""
         if self.circuitfigure.isVisible():
             self.circuitfigure.close()
             self.circuit_visibility_button.setText("Open circuit")
@@ -764,6 +935,7 @@ class Main(QMainWindow):
             self.circuit_visibility_button.setText("Close circuit")
 
     def show_position_names(self):
+        """Show the position names on the board"""
         show = self.home_positions[0].text() == "" # If show=True add the integers values, otherwise remove
 
         self.position_names_button.setText("Remove position names" if show==True else "Show position names")
@@ -772,6 +944,7 @@ class Main(QMainWindow):
                     pos.setText(rf'{str(i) if show==True else ""}')
 
     def reset_app(self, next_turn = True):
+        """Reset the game to the initial state. This is similar to starting a new game, except that the history is not cleared (e.g. ctrl+z still works)"""
         # Reset the quantum circuit completely
         self.circuit._reset()
         self.update_drawn_circuit()
@@ -795,7 +968,6 @@ class Main(QMainWindow):
                 pos.clicked.disconnect()
             except TypeError:
                 pass
-        
         
         for i, pos in enumerate(self.home_positions):
             current_color = self.colors[int(np.floor(i/2))]
@@ -825,6 +997,7 @@ class Main(QMainWindow):
 
 
     def print_positions(self):
+        """Print the positions of the pawns on the board and the home positions by displaying the "pawn" and "color" properties of each position"""
         pawns_on_board = [[position.property("Color"), position.property("Pawn")] for position in self.board_positions]
         pawns_on_spawn = [[position.property("Color"), position.property("Pawn")] for position in self.home_positions]
         print(DataFrame(pawns_on_board, columns = ['Color','Pawn number']).T.fillna('   ').replace({np.nan: '   '}))
@@ -832,12 +1005,14 @@ class Main(QMainWindow):
         print("--------------------")
 
     def print_all_options(self):
+        """Print the possible moves for the current player"""
         option_names = ["superposition_move_options", "new_pawn_options", "single_move_options"]
         for i in range(0,3):
             print(option_names[i], self.all_options[i])
         print("--------------------")
 
     def save_as_svg(self):
+        """Take a screenshot and save as SVG"""
         # Name of file is the time and date
         filename = os.path.join(dir_path, "screenshots", f"{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.svg")
         # Set up the SVG generator
@@ -853,11 +1028,28 @@ class Main(QMainWindow):
         self.render(painter)
         painter.end()
 
+    def update_progress_bar(self):
+        """Update progress bar to reflect the number of occupied positions (up to 20)."""
+        occupied_positions_count = sum(
+            1 for pos in self.board_positions if pos.property("Color") is not None
+        )
+        # Cap at 20:
+        occupied_positions_count = min(occupied_positions_count, 20)
+        self.progress_bar.setValue(occupied_positions_count)
 
-    # ------------------------------------------------------------
-    # Preprogrammed positions
-    # ------------------------------------------------------------
 
+    """
+    The following methods are not used in the main game, but are used to test the game logic in different scenarios.
+    These can be accessed by the "Move" menu in the GUI.
+    They are used to test the game logic in different scenarios, such as:
+        - Use a quantum pawn to capture a classical pawn
+        - Use a quantum pawn to capture a quantum pawn
+        - Use a classical pawn to capture a classical pawn
+        - Use a classical pawn to capture a quantum pawn
+        - Add all pawns to the board 
+        - Start just before a pawn reaches its final position
+    The functions follow after this comment respectively.
+    """
     def start_in_quantum_classical_capture(self, type_cap = 'normal'):
         self.reset_app()
         self.current_turn = self.colors[0]
@@ -1034,15 +1226,7 @@ class Main(QMainWindow):
         self.dice[1].setIcon(die_cons[self.die_throws[1]])
         self.save()
         self.game_logic()
-    
-    def update_progress_bar(self):
-        """Update progress bar to reflect the number of occupied positions (up to 20)."""
-        occupied_positions_count = sum(
-            1 for pos in self.board_positions if pos.property("Color") is not None
-        )
-        # Cap at 20:
-        occupied_positions_count = min(occupied_positions_count, 20)
-        self.progress_bar.setValue(occupied_positions_count)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
