@@ -240,7 +240,7 @@ class Main(QMainWindow):
             self.all_pawns_button.addAction(button)
 
         self.finish_positions_button = self.test_moves.addMenu("Finish positions")
-        finish_types = ['single_move', 'single_capture_finish', 'single_from_super', 'single_win']
+        finish_types = ['single_move', 'single_capture_finish', 'single_from_super', 'single_win', 'super_move', 'super_win', 'double_super', 'super_cap', 'double_super_win_cap']
         self.finish_position_buttons = [Qt.QAction(finish_type) for finish_type in finish_types]
         for button, finish_type in zip(self.finish_position_buttons, finish_types):
             button.triggered.connect(lambda _, b = finish_type: self.start_in_finish_positions(fin_type = b))
@@ -537,30 +537,70 @@ class Main(QMainWindow):
                                 and self.board_positions[i].property("Pawn") == self.board_positions[move].property("Pawn")
                                 and move != i] for move in captives]
         capture_move = list(map(lambda move: self.find_next_available_spot(move, None), captives))
-        
+
+
         if len(captives) != 0:
             capture_move[0] = self.find_next_available_spot(changing_move=capture_move[0], constant_move=(normal_move[0] if len(captives) == 1 else capture_move[1]))
 
         normal_move = self.check_if_moving_in_final_positions(move_from, normal_move)
         capture_move = self.check_if_moving_in_final_positions(move_from, capture_move)
+        
+        nr_of_final_positions = sum(1 for pos in move_to if pos == self.current_turn)
+        if nr_of_final_positions == 1:
+            normal_move = list(map(lambda x: 32 if x == self.current_turn else x, normal_move))
+            capture_move = list(map(lambda x: 32 if x == self.current_turn else x, capture_move))
+        if nr_of_final_positions == 2:
+            normal_move = [32, 33]
+            capture_move = [32, 33]
         move_to = normal_move + capture_move
 
+        final_pos = self.colors.index(self.current_turn) * 2 + pawn
+
         self.circuit.move(move_from = [move_from], move_to = move_to)
-
         for i in range(len(captives)):
-            self.circuit.capture(capturer=[capture_move[i]], captive = [captives[i]], captive_entanglement=captive_entanglement[i])         
+            self.circuit.capture(capturer=[capture_move[i]], captive = [captives[i]], captive_entanglement=captive_entanglement[i])   
 
-        for prop in ["Color", "Pawn"]:
-            self.board_positions[move_to[0]].setProperty(prop, self.board_positions[move_from].property(prop))
-            self.board_positions[move_to[1]].setProperty(prop, self.board_positions[move_from].property(prop))
-            self.board_positions[move_from].setProperty(prop, None)
+
+        if nr_of_final_positions == 0:
+
+            for prop in ["Color", "Pawn"]:
+                self.board_positions[move_to[0]].setProperty(prop, self.board_positions[move_from].property(prop))
+                self.board_positions[move_to[1]].setProperty(prop, self.board_positions[move_from].property(prop))
+                self.board_positions[move_from].setProperty(prop, None)
+        if nr_of_final_positions == 1:
+            move_to = list(map(lambda x: 32 if x == self.current_turn else x, move_to))
+            self.circuit.move(move_from = [move_from], move_to=move_to)
+            pawn = self.board_positions[move_from].property("Pawn")
+            self.final_positions[final_pos].setProperty("Color", self.board_positions[move_from].property("Color"))
+            self.final_positions[final_pos].setProperty("Pawn", self.board_positions[move_from].property("Pawn"))
+
+            for pos in move_to:
+                if pos < 32:
+                    self.board_positions[pos].setProperty("Color", self.board_positions[move_from].property("Color"))
+                    self.board_positions[pos].setProperty("Pawn", self.board_positions[move_from].property("Pawn"))
+            self.board_positions[move_from].setProperty("Color", None)
+            self.board_positions[move_from].setProperty("Pawn", None)
+        if nr_of_final_positions == 2:
+            move_to = [32,33]
+            self.circuit.move(move_from = [move_from], move_to=move_to)
+            pawn = self.board_positions[move_from].property("Pawn")
+            self.final_positions[final_pos].setProperty("Color", self.board_positions[move_from].property("Color"))
+            self.final_positions[final_pos].setProperty("Pawn", self.board_positions[move_from].property("Pawn"))
+            self.board_positions[move_from].setProperty("Color", None)
+            self.board_positions[move_from].setProperty("Pawn", None)
+
         
+    
         # self.board_positions[move_to[0]].setStyleSheet(button_stylesheet(color=self.current_turn))
         # self.board_positions[move_to[1]].setStyleSheet(button_stylesheet(color=self.current_turn))
         # self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
 
-        if to_next_turn: 
-            self.next_turn()
+        if nr_of_final_positions == 0:
+            if to_next_turn:
+                self.next_turn()
+        else:
+            self.update_stylesheets(deselect=True)
+            QTimer.singleShot(500, lambda : self.measure_action(final_position = final_pos))
 
     def new_pawn(self, move_from, optional_move_to = None, to_next_turn = True):
         move_to_original = self.start_position[self.current_turn] if optional_move_to == None else optional_move_to
@@ -932,17 +972,20 @@ class Main(QMainWindow):
             self.new_pawn(0, optional_move_to=24, to_next_turn=False)
             self.new_pawn(1, optional_move_to=22, to_next_turn=False)
             self.die_throws = [4,4]
-        if fin_type == 'single_capture_finish':
+        if fin_type == 'single_capture_finish' or fin_type == 'super_cap':
             self.new_pawn(0,9,False)
             self.current_turn = self.colors[2]
             self.new_pawn(5,7,False)
-            self.die_throws = [2,2]
+            if fin_type == 'single_capture_finish':
+                self.die_throws = [2,2]
+            if fin_type == 'super_cap':
+                self.die_throws = [2,5]
         if fin_type == 'single_from_super':
             self.new_pawn(0, 23, False)
             self.die_throws = [1,2]
             self.move(23, False)
             self.die_throws = [5,5]
-        if fin_type == 'single_win':
+        if fin_type == 'single_win' or fin_type == 'double_super_win_cap':
             self.final_positions[4].setProperty("Color", self.colors[2])
             self.final_positions[4].setProperty("Pawn", 0)
             self.final_positions[1].setProperty("Color", self.colors[0])
@@ -950,8 +993,25 @@ class Main(QMainWindow):
             self.new_pawn(0,23, False)
             self.new_pawn(5, 8, False)
             self.measure_action()
-            self.current_turn = self.colors[2] 
-            self.die_throws = [4,4]
+            self.current_turn = self.colors[2]
+            if fin_type == 'single_win':
+                self.die_throws = [4,4]
+            if fin_type == 'double_super_win_cap':
+                self.new_pawn(1,9,False)
+                self.die_throws = [1,2]
+        if fin_type == 'super_move':
+            self.new_pawn(0,24,False)
+            self.die_throws = [1,2]
+        if fin_type == 'super_win' or fin_type == 'double_super':
+            self.final_positions[1].setProperty("Color", self.colors[0])
+            self.final_positions[1].setProperty("Pawn", 1)
+            self.new_pawn(0,24, False)
+            self.measure_action()
+            self.current_turn = self.colors[0]
+            if fin_type == 'super_win':
+                self.die_throws = [1,2]
+            if fin_type == 'double_super':
+                self.die_throws = [4,5]
 
         self.dice[0].setIcon(die_cons[self.die_throws[0]])
         self.dice[1].setIcon(die_cons[self.die_throws[1]])
