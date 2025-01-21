@@ -13,6 +13,8 @@ from PyQt5.QtWidgets import QSizePolicy
 from PyQt5.QtGui import QIcon
 import PyQt5.QtCore as Qtc
 from PyQt5.QtCore import QSize, QTimer
+from PyQt5.QtSvg import QSvgGenerator
+from PyQt5.QtGui import QPainter
 
 # others
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -22,6 +24,7 @@ import os
 import numpy as np
 import random
 from pandas import DataFrame
+import datetime
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -158,6 +161,10 @@ class Main(QMainWindow):
         self.reset.setShortcut("Ctrl+R")
         self.reset.triggered.connect(self.reset_app)
 
+        self.screenshot = Qt.QAction("Screenshot", self)
+        self.screenshot.setShortcut("f5")
+        self.screenshot.triggered.connect(self.save_as_svg)
+
         self.undo_button = Qt.QAction("Undo", self)
         self.undo_button.setShortcut("Ctrl+Z")
         self.undo_button.triggered.connect(self.undo)
@@ -249,6 +256,7 @@ class Main(QMainWindow):
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.undo_button)
         self.file_menu.addAction(self.throw_dice_button)
+        self.file_menu.addAction(self.screenshot)
         self.debug_menu.addAction(self.measure_button)
         self.debug_menu.addAction(self.skip_turn)
         self.debug_menu.addAction(self.select_dice_button)
@@ -824,6 +832,22 @@ class Main(QMainWindow):
         for i in range(0,3):
             print(option_names[i], self.all_options[i])
         print("--------------------")
+
+    def save_as_svg(self):
+        # Name of file is the time and date
+        filename = os.path.join(dir_path, "screenshots", f"{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.svg")
+        # Set up the SVG generator
+        svg_generator = QSvgGenerator()
+        svg_generator.setFileName(filename)
+        svg_generator.setSize(self.size())
+        svg_generator.setViewBox(self.rect())
+        svg_generator.setTitle("SVG Screenshot")
+        svg_generator.setDescription("An SVG rendering of a PyQt window")
+        
+        # Render the widget onto the SVG generator using QPainter
+        painter = QPainter(svg_generator)
+        self.render(painter)
+        painter.end()
 
 
     # ------------------------------------------------------------
