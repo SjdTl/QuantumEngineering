@@ -313,7 +313,7 @@ class Main(QMainWindow):
             if i == 6: grid.addWidget(pos, 8, 1), pos.setProperty("Pawn", 0)
             if i == 7: grid.addWidget(pos, 7, 0), pos.setProperty("Pawn", 1)
 
-        self.final_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(0,7)]
+        self.final_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(8)]
         for i, pos in enumerate(self.final_positions):
             current_color = self.colors[int(np.floor(i/2))]
             pos.setFixedSize(50,50)
