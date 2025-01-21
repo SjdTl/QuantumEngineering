@@ -4,6 +4,8 @@ from PyQt5.QtCore import Qt
 import sys
 import os
 from main import Main 
+from PyQt5.QtSvg import QSvgGenerator
+from PyQt5.QtGui import QPainter
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -90,9 +92,25 @@ class StartScreen(QMainWindow):
         tutorial_pawn.setGeometry(230, 340, 60, 60)
 
     def play(self, debug = False):
+        self.save_as_svg()
         self.close()  # Close the Start screen
         self.main_window = Main(debug=debug)  # Create instance of Main window
         self.main_window.show()  # Show Main window
+
+    def save_as_svg(self):
+        filename = os.path.join(dir_path, "screenshots", "start_screen.svg")
+        # Set up the SVG generator
+        svg_generator = QSvgGenerator()
+        svg_generator.setFileName(filename)
+        svg_generator.setSize(self.size())
+        svg_generator.setViewBox(self.rect())
+        svg_generator.setTitle("SVG Screenshot")
+        svg_generator.setDescription("An SVG rendering of a PyQt window")
+        
+        # Render the widget onto the SVG generator using QPainter
+        painter = QPainter(svg_generator)
+        self.render(painter)
+        painter.end()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
