@@ -62,13 +62,12 @@ stylesheet  ="""
 def button_stylesheet(button, color="transparent", border_color='white', selected = False, pawn = 0, classical = True):
         """
         Description
-
+        ----------- 
         Specifies color and transparency of a position on the board and border response to:
         1. being occupied
         2. being hovered over
         3. being available for a move
 
-        -----------
 
         quantum_transparency: transparency when position is not 100% occupied
 
@@ -113,10 +112,10 @@ def button_stylesheet(button, color="transparent", border_color='white', selecte
 def die_stylesheet(color="transparent"):
         """
         Description
+        -----------
      
         Specifies visual effects of the dice boxes (bottom left on the screen)
 
-        -----------
 
         Border color depends on who's turn it is
 

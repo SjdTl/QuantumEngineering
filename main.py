@@ -29,6 +29,10 @@ import datetime
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class LoadingPopup(QDialog):
+    """
+    
+    """
+
     def __init__(self, header_text : str):
         super().__init__()
         self.setWindowTitle(header_text)
