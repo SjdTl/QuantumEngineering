@@ -16,7 +16,7 @@ While the game is playing, a quantum circuit is created in the background. With 
 - qiskit==1.3.1
 - qiskit-aer==0.15.1
 - 
-The game will probably run with packages in different versions, but these are the tested ones. The game is both tested on macOS and Windows.
+The game will probably run with packages in different versions, but these are the tested ones. The game is tested on both macOS and Windows.
 
 When running on the real quantum chip, an API key should also be inserted in the repository, which can be found [here](https://quantum.ibm.com/)
 
