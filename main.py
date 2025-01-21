@@ -545,15 +545,22 @@ class Main(QMainWindow):
         normal_move = self.check_if_moving_in_final_positions(move_from, normal_move)
         capture_move = self.check_if_moving_in_final_positions(move_from, capture_move)
         
-        nr_of_final_positions = sum(1 for pos in move_to if pos == self.current_turn)
+        nr_of_final_positions = sum(1 for pos in normal_move+capture_move if pos == self.current_turn)
         if nr_of_final_positions == 1:
             normal_move = list(map(lambda x: 32 if x == self.current_turn else x, normal_move))
             capture_move = list(map(lambda x: 32 if x == self.current_turn else x, capture_move))
         if nr_of_final_positions == 2:
-            normal_move = [32, 33]
-            capture_move = [32, 33]
+            if len(normal_move) == 2:
+                normal_move = [32, 33]
+            elif len(capture_move) == 2:
+                capture_move = [32, 33]
+            else:
+                normal_move = list(map(lambda x: 32 if x == self.current_turn else x, normal_move))
+                capture_move = list(map(lambda x: 33 if x == self.current_turn else x, capture_move))
         move_to = normal_move + capture_move
-
+        print(move_to)
+        pawn = self.board_positions[move_from].property("Pawn")
+        color = self.board_positions[move_from].property("Color")
         final_pos = self.colors.index(self.current_turn) * 2 + pawn
 
         self.circuit.move(move_from = [move_from], move_to = move_to)
@@ -561,39 +568,21 @@ class Main(QMainWindow):
             self.circuit.capture(capturer=[capture_move[i]], captive = [captives[i]], captive_entanglement=captive_entanglement[i])   
 
 
-        if nr_of_final_positions == 0:
+        board_prop = [pawn, color]
 
-            for prop in ["Color", "Pawn"]:
-                self.board_positions[move_to[0]].setProperty(prop, self.board_positions[move_from].property(prop))
-                self.board_positions[move_to[1]].setProperty(prop, self.board_positions[move_from].property(prop))
-                self.board_positions[move_from].setProperty(prop, None)
-        if nr_of_final_positions == 1:
-            move_to = list(map(lambda x: 32 if x == self.current_turn else x, move_to))
-            self.circuit.move(move_from = [move_from], move_to=move_to)
-            pawn = self.board_positions[move_from].property("Pawn")
-            self.final_positions[final_pos].setProperty("Color", self.board_positions[move_from].property("Color"))
-            self.final_positions[final_pos].setProperty("Pawn", self.board_positions[move_from].property("Pawn"))
-
-            for pos in move_to:
-                if pos < 32:
-                    self.board_positions[pos].setProperty("Color", self.board_positions[move_from].property("Color"))
-                    self.board_positions[pos].setProperty("Pawn", self.board_positions[move_from].property("Pawn"))
-            self.board_positions[move_from].setProperty("Color", None)
-            self.board_positions[move_from].setProperty("Pawn", None)
-        if nr_of_final_positions == 2:
-            move_to = [32,33]
-            self.circuit.move(move_from = [move_from], move_to=move_to)
-            pawn = self.board_positions[move_from].property("Pawn")
-            self.final_positions[final_pos].setProperty("Color", self.board_positions[move_from].property("Color"))
-            self.final_positions[final_pos].setProperty("Pawn", self.board_positions[move_from].property("Pawn"))
-            self.board_positions[move_from].setProperty("Color", None)
-            self.board_positions[move_from].setProperty("Pawn", None)
-
-        
-    
-        # self.board_positions[move_to[0]].setStyleSheet(button_stylesheet(color=self.current_turn))
-        # self.board_positions[move_to[1]].setStyleSheet(button_stylesheet(color=self.current_turn))
-        # self.board_positions[move_from].setStyleSheet(button_stylesheet(color=None))
+        for i, prop in enumerate(["Pawn", "Color"]):
+            if nr_of_final_positions == 0:
+                self.board_positions[move_to[0]].setProperty(prop, board_prop[i])
+                self.board_positions[move_to[1]].setProperty(prop, board_prop[i])
+            if nr_of_final_positions == 1:
+                self.final_positions[final_pos].setProperty(prop, board_prop[i])
+                for pos in move_to:
+                    if pos < 32:
+                        self.board_positions[pos].setProperty("Pawn", self.board_positions[move_from].property("Pawn"))
+            if nr_of_final_positions == 2:
+                self.final_positions[final_pos].setProperty(prop, board_prop[i])
+            self.board_positions[move_from].setProperty(prop, None)
+            
 
         if nr_of_final_positions == 0:
             if to_next_turn:
