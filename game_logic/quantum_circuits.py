@@ -198,7 +198,7 @@ class circuit():
         """
         Description
         -----------
-        Temporary move for now
+        Unused move in which a pawn (P=50%) merges with another pawn (P=50%) to form a superposition (P=75% and P=25%)
 
         Pawn moves from a position move_from to two positions, but one of these positions is occupied by the same pawn in superposition (namely on position merge_in)
         """
@@ -334,6 +334,7 @@ class circuit():
         return filtered_data
     
     def _internal_efficient_simulation(self, backend = FakeSherbrooke(), optimization_level =2, shots = 1024):
+        """Simulate the circuit in a more efficient way by removing idle wires"""
         def count_gates(qc: QuantumCircuit):
             gate_count = {qubit: 0 for qubit in qc.qubits}
             for gate in qc.data:
