@@ -52,4 +52,5 @@ QuantumEngineering/
 ```
 
 # Example game
-![](https://github.com/SjdTl/QuantumEngineering/blob/main/play.mp4)
+<video src='https://github.com/SjdTl/QuantumEngineering/blob/main/play.mp4' width=180/>
+
