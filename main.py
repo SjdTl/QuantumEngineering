@@ -744,7 +744,7 @@ class Main(QMainWindow):
                 self.final_positions[final_pos].setProperty(prop, board_prop[i])
                 for pos in move_to:
                     if pos < 32:
-                        self.board_positions[pos].setProperty("Pawn", self.board_positions[move_from].property("Pawn"))
+                        self.board_positions[pos].setProperty(prop, self.board_positions[move_from].property(prop))
             if nr_of_final_positions == 2:
                 self.final_positions[final_pos].setProperty(prop, board_prop[i])
             self.board_positions[move_from].setProperty(prop, None)
