@@ -52,5 +52,5 @@ QuantumEngineering/
 ```
 
 # Example game
-<video src='https://github.com/SjdTl/QuantumEngineering/blob/main/play.mp4' width=180/>
+An example game and a walkthrough of the debug functions can be found [here](https://github.com/SjdTl/QuantumEngineering/blob/main/play.mp4) in this repository.
 
