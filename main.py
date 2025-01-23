@@ -953,6 +953,8 @@ class Main(QMainWindow):
                     self.home_positions[spawn_slot].setProperty("Pawn", pawnIdx)
 
     
+        #  I am confused as to what this does
+        # Isn't it enough to just add all the pawns to the circuit without checks?
         for pos in range(self.N):
             c = self.board_positions[pos].property("Color")
             p = self.board_positions[pos].property("Pawn")
