@@ -793,6 +793,7 @@ class Main(QMainWindow):
         -----------
         Move a pawn from the home position to the board and potentially capture another pawn.
         NOTE: We NO LONGER call self.circuit.new_pawn(...) inside here.
+           |-> This is probably not what you want
         We do that after measurement to finalize state.
         """
         move_to_original = (self.start_position[self.current_turn]
@@ -811,8 +812,8 @@ class Main(QMainWindow):
             self.board_positions[move_to].setProperty(prop, self.home_positions[move_from].property(prop))
             self.home_positions[move_from].setProperty(prop, None)
 
-
-   
+        # THIS HAS NO INFLUENCE ON WHAT HAPPENS IN MEASURE_ACTION
+        self.circuit.new_pawn([move_to])
 
         if move_to != move_to_original:
             self.circuit.capture(
@@ -836,6 +837,11 @@ class Main(QMainWindow):
             if final_position in [colorIndex * 2, colorIndex * 2 + 1]:
                 trigger_pawn_index = final_position - (colorIndex * 2)
 
+        # The same can be achieved like this, since there are some specific rules
+        # the pawns obey:
+        # if final_position is not None:
+        #     trigger_pawn_index = final_position % 2
+
         # Create occupant->basis map from measure_basis_dict
         # occupant_color in {Red,Green,Blue,Purple}
         # occupant is measured by measure_basis_dict[(trigger_color, trigger_pawn_index)][occupant_color]
@@ -846,6 +852,7 @@ class Main(QMainWindow):
                 occupant_to_basis[pos] = self.measure_basis_dict[(trigger_color, trigger_pawn_index)][color_]
             elif force_all:
                 # measure unoccupied in Z also if forcing all
+                # Isn't thus unnecessary since this is the default basis?
                 occupant_to_basis[pos] = "Z"
 
       
@@ -856,12 +863,11 @@ class Main(QMainWindow):
         measure_popup = MeasurePopup()
         measure_popup.show()
 
-        (positions_after_measure,
-        out_with_freq,
-        nr_of_qubits_used) = self.circuit.measure(
-            occupant_bases=occupant_to_basis,
-            efficient=True
-        )
+        positions_after_measure, out_with_freq, nr_of_qubits_used = self.circuit.measure(
+                                                                    occupant_bases=occupant_to_basis,
+                                                                    efficient=True,
+                                                                    out_internal_measure=True
+                                                                )
         # positions_after_measure: set of positions that collapsed to 1 
         #                          (meaning there's a pawn present).
         # out_with_freq: debugging info
