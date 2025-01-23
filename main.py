@@ -47,38 +47,14 @@ class LoadingPopup(QDialog):
 
     >>> Creates a popup with as header_text "Loading" and text inside the popup "Loading"
     """
-    def __init__(self, simulation=True, debug=False):
-       
-        self.simulation = simulation
-        self.debug = debug
-
-        self.N = 32
-        self.circuit = circuit(self.N)
-        self.history = []
-
-       
-        self.measure_basis_dict = {
-            ("Red",    0): {"Red":    "Z", "Green":  "Q", "Blue":   "X", "Purple": "T"},
-            ("Red",    1): {"Red":    "Z", "Purple": "Q", "Blue":   "X", "Green":  "T"},
-            ("Blue",   0): {"Blue":   "Z", "Purple": "Q", "Red":    "X", "Green":  "T"},
-            ("Blue",   1): {"Blue":   "Z", "Green":  "Q", "Red":    "X", "Purple": "T"},
-            ("Green",  0): {"Green":  "Z", "Red":    "Q", "Purple": "X", "Blue":   "T"},
-            ("Green",  1): {"Green":  "Z", "Blue":   "Q", "Purple": "X", "Red":    "T"},
-            ("Purple", 0): {"Purple": "Z", "Blue":   "Q", "Green":  "X", "Red":    "T"},
-            ("Purple", 1): {"Purple": "Z", "Red":    "Q", "Green":  "X", "Blue":   "T"}
-        }
-
+    def __init__(self, header_text : str):
         super().__init__()
-        self.setWindowTitle("Quantum Ludo")
-        self.setGeometry(250, 250, 600, 500)
-
-        self.window()     # top menu bar
-        self.initUI()     # build the board, pawns, dice, etc.
-
-        # Start on last color so that next_turn picks the first color
-        self.current_turn = ["Red", "Green", "Blue", "Purple"][-1]
-        self.total_turns = 0
-        self.next_turn()
+        self.setWindowTitle(header_text)
+        self.setFixedSize(300, 200)
+        layout = QVBoxLayout()
+        self.label = QLabel("")
+        layout.addWidget(self.label)
+        self.setLayout(layout)
 
 class WinPopup(QDialog):
     """
@@ -226,24 +202,27 @@ class CircuitFigure(QDialog):
 class Main(QMainWindow):
     """Main class for the game: UI and classical game logic"""
     def __init__(self, simulation = True, debug = False):
-        """
-        Description
-        -----------
-        Initialize the main class for the game: start up the UI, settings and quantum circuit
+        super().__init__()
+        
+        # Store the dictionary in Main
+        self.measure_basis_dict = {
+            ("Red",    0): {"Red":    "Z", "Green":  "Q", "Blue":   "X", "Purple": "T"},
+            ("Red",    1): {"Red":    "Z", "Purple": "Q", "Blue":   "X", "Green":  "T"},
+            ("Blue",   0): {"Blue":   "Z", "Purple": "Q", "Red":    "X", "Green":  "T"},
+            ("Blue",   1): {"Blue":   "Z", "Green":  "Q", "Red":    "X", "Purple": "T"},
+            ("Green",  0): {"Green":  "Z", "Red":    "Q", "Purple": "X", "Blue":   "T"},
+            ("Green",  1): {"Green":  "Z", "Blue":   "Q", "Purple": "X", "Red":    "T"},
+            ("Purple", 0): {"Purple": "Z", "Blue":   "Q", "Green":  "X", "Red":    "T"},
+            ("Purple", 1): {"Purple": "Z", "Red":    "Q", "Green":  "X", "Blue":   "T"}
+        }
 
-        Parameters
-        ----------
-        simulation : Boolean
-            If True, the quantum circuit is simulated using AerSimulator(). If False, the quantum circuit is run on a real quantum computer
-        debug : Boolean
-            If True, the game is in debug mode. This is not very different from normal mode, except that some debug features are already enabled, but can be toggled on and off
-        """
         self.simulation = simulation
         self.debug = debug
 
         self.N = 32
         self.circuit = circuit(self.N)
         self.history = []
+        
 
         self.circuitfigure = CircuitFigure()
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False)
