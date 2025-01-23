@@ -47,14 +47,38 @@ class LoadingPopup(QDialog):
 
     >>> Creates a popup with as header_text "Loading" and text inside the popup "Loading"
     """
-    def __init__(self, header_text : str):
+    def __init__(self, simulation=True, debug=False):
+       
+        self.simulation = simulation
+        self.debug = debug
+
+        self.N = 32
+        self.circuit = circuit(self.N)
+        self.history = []
+
+       
+        self.measure_basis_dict = {
+            ("Red",    0): {"Red":    "Z", "Green":  "Q", "Blue":   "X", "Purple": "T"},
+            ("Red",    1): {"Red":    "Z", "Purple": "Q", "Blue":   "X", "Green":  "T"},
+            ("Blue",   0): {"Blue":   "Z", "Purple": "Q", "Red":    "X", "Green":  "T"},
+            ("Blue",   1): {"Blue":   "Z", "Green":  "Q", "Red":    "X", "Purple": "T"},
+            ("Green",  0): {"Green":  "Z", "Red":    "Q", "Purple": "X", "Blue":   "T"},
+            ("Green",  1): {"Green":  "Z", "Blue":   "Q", "Purple": "X", "Red":    "T"},
+            ("Purple", 0): {"Purple": "Z", "Blue":   "Q", "Green":  "X", "Red":    "T"},
+            ("Purple", 1): {"Purple": "Z", "Red":    "Q", "Green":  "X", "Blue":   "T"}
+        }
+
         super().__init__()
-        self.setWindowTitle(header_text)
-        self.setFixedSize(300, 200)
-        layout = QVBoxLayout()
-        self.label = QLabel("")
-        layout.addWidget(self.label)
-        self.setLayout(layout)
+        self.setWindowTitle("Quantum Ludo")
+        self.setGeometry(250, 250, 600, 500)
+
+        self.window()     # top menu bar
+        self.initUI()     # build the board, pawns, dice, etc.
+
+        # Start on last color so that next_turn picks the first color
+        self.current_turn = ["Red", "Green", "Blue", "Purple"][-1]
+        self.total_turns = 0
+        self.next_turn()
 
 class WinPopup(QDialog):
     """
@@ -695,135 +719,271 @@ class Main(QMainWindow):
             self.update_stylesheets(deselect=True)
             QTimer.singleShot(500, lambda : self.measure_action(final_position = final_pos))
 
-    def move(self, move_from, to_next_turn = True):
-        """Move a pawn from one position to two others (in a superposition) and potentially capture another or two other pawns"""
-        move_to = [(move_from + self.die_throws[0]) % 32, (move_from + self.die_throws[1]) % 32]
-        captives = [pos for pos in move_to if self.board_positions[pos].property("Color") != None]
+    def move(self, move_from, to_next_turn=True):
+        """
+        Description
+        -----------
+        Move a pawn from one position to two others (in superposition) and potentially capture other pawns.
+        Now includes an extra CX in the quantum circuit.
+        """
+        move_to = [(move_from + self.die_throws[0]) % 32,
+                (move_from + self.die_throws[1]) % 32]
+        captives = [pos for pos in move_to if self.board_positions[pos].property("Color") is not None]
         normal_move = [pos for pos in move_to if self.board_positions[pos].property("Color") is None]
-        captive_entanglement = [[i for i in range(0,32)
-                                if self.board_positions[i].property("Color") == self.board_positions[move].property("Color")
-                                and self.board_positions[i].property("Pawn") == self.board_positions[move].property("Pawn")
-                                and move != i] for move in captives]
-        capture_move = list(map(lambda move: self.find_next_available_spot(move, None), captives))
 
-
+        # Find positions that share the same occupant for entanglement
+        captive_entanglement = [
+            [i for i in range(0, 32)
+            if (self.board_positions[i].property("Color") == self.board_positions[move].property("Color")
+                and self.board_positions[i].property("Pawn") == self.board_positions[move].property("Pawn")
+                and move != i)]
+            for move in captives
+        ]
+        capture_move = [
+            self.find_next_available_spot(move, None) for move in captives
+        ]
         if len(captives) != 0:
-            capture_move[0] = self.find_next_available_spot(changing_move=capture_move[0], constant_move=(normal_move[0] if len(captives) == 1 else capture_move[1]))
+            capture_move[0] = self.find_next_available_spot(
+                changing_move=capture_move[0],
+                constant_move=(normal_move[0] if len(captives) == 1 else capture_move[1])
+            )
 
         normal_move = self.check_if_moving_in_final_positions(move_from, normal_move)
         capture_move = self.check_if_moving_in_final_positions(move_from, capture_move)
-        
-        nr_of_final_positions = sum(1 for pos in normal_move+capture_move if pos == self.current_turn)
+
+        nr_of_final_positions = sum(
+            1 for pos in (normal_move + capture_move) if pos == self.current_turn
+        )
+        # If a pawn is finishing, handle that
         if nr_of_final_positions == 1:
-            normal_move = list(map(lambda x: 32 if x == self.current_turn else x, normal_move))
-            capture_move = list(map(lambda x: 32 if x == self.current_turn else x, capture_move))
-        if nr_of_final_positions == 2:
+            normal_move = [32 if x == self.current_turn else x for x in normal_move]
+            capture_move = [32 if x == self.current_turn else x for x in capture_move]
+        elif nr_of_final_positions == 2:
+            # Could collapse into two final positions -> handle with 32, 33, etc.
             if len(normal_move) == 2:
                 normal_move = [32, 33]
             elif len(capture_move) == 2:
                 capture_move = [32, 33]
             else:
-                normal_move = list(map(lambda x: 32 if x == self.current_turn else x, normal_move))
-                capture_move = list(map(lambda x: 33 if x == self.current_turn else x, capture_move))
-        move_to = normal_move + capture_move
+                normal_move = [32 if x == self.current_turn else x for x in normal_move]
+                capture_move = [33 if x == self.current_turn else x for x in capture_move]
+
+        final_positions = normal_move + capture_move
+
         pawn = self.board_positions[move_from].property("Pawn")
         color = self.board_positions[move_from].property("Color")
-        final_pos = self.colors.index(self.current_turn) * 2 + pawn
+        final_pos_index = self.colors.index(self.current_turn) * 2 + pawn
 
-        self.circuit.move(move_from = [move_from], move_to = move_to)
+      
+        self.circuit.move(move_from=[move_from], move_to=final_positions, add_cx=True)
+
         for i in range(len(captives)):
-            self.circuit.capture(capturer=[capture_move[i]], captive = [captives[i]], captive_entanglement=captive_entanglement[i])   
+            self.circuit.capture(
+                capturer=[capture_move[i]], 
+                captive=[captives[i]], 
+                captive_entanglement=captive_entanglement[i]
+            )
 
-
-        board_prop = [pawn, color]
-
+        # Update classical board occupancy
         for i, prop in enumerate(["Pawn", "Color"]):
             if nr_of_final_positions == 0:
-                self.board_positions[move_to[0]].setProperty(prop, board_prop[i])
-                self.board_positions[move_to[1]].setProperty(prop, board_prop[i])
-            if nr_of_final_positions == 1:
-                self.final_positions[final_pos].setProperty(prop, board_prop[i])
-                for pos in move_to:
+                self.board_positions[final_positions[0]].setProperty(prop, [pawn, color][i])
+                self.board_positions[final_positions[1]].setProperty(prop, [pawn, color][i])
+            elif nr_of_final_positions == 1:
+                self.final_positions[final_pos_index].setProperty(prop, [pawn, color][i])
+                # only set occupant for those final_positions that are still on the board
+                for pos in final_positions:
                     if pos < 32:
-                        self.board_positions[pos].setProperty(prop, self.board_positions[move_from].property(prop))
-            if nr_of_final_positions == 2:
-                self.final_positions[final_pos].setProperty(prop, board_prop[i])
-            self.board_positions[move_from].setProperty(prop, None)
-            
+                        self.board_positions[pos].setProperty(prop, [pawn, color][i])
+            else:  # nr_of_final_positions == 2
+                self.final_positions[final_pos_index].setProperty(prop, [pawn, color][i])
 
-        if nr_of_final_positions == 0:
-            if to_next_turn:
-                self.next_turn()
+            self.board_positions[move_from].setProperty(prop, None)
+
+        # If no final position, proceed
+        if nr_of_final_positions == 0 and to_next_turn:
+            self.next_turn()
         else:
             self.update_stylesheets(deselect=True)
-            QTimer.singleShot(500, lambda : self.measure_action(final_position = final_pos))
+            # Possibly measure now that a pawn has reached final or superpos
+            QTimer.singleShot(500, lambda: self.measure_action(final_position=final_pos_index))
 
-    def new_pawn(self, move_from, optional_move_to = None, to_next_turn = True):
-        """Move a pawn from the home position to the board and potentially capture another pawn"""
-        move_to_original = self.start_position[self.current_turn] if optional_move_to == None else optional_move_to
+    def new_pawn(self, move_from, optional_move_to=None, to_next_turn=True):
+        """
+        Description
+        -----------
+        Move a pawn from the home position to the board and potentially capture another pawn.
+        NOTE: We NO LONGER call self.circuit.new_pawn(...) inside here.
+        We do that after measurement to finalize state.
+        """
+        move_to_original = (self.start_position[self.current_turn]
+                            if optional_move_to is None
+                            else optional_move_to)
         move_to = self.find_next_available_spot(move_to_original)
-        captive_entanglement = [i for i in range(0,32)
-                                if self.board_positions[i].property("Color") == self.board_positions[move_to_original].property("Color")
-                                and self.board_positions[i].property("Pawn") == self.board_positions[move_to_original].property("Pawn")
-                                and move_to_original != i]
-        
+        captive_entanglement = [
+            i for i in range(0, 32)
+            if (self.board_positions[i].property("Color") == self.board_positions[move_to_original].property("Color")
+                and self.board_positions[i].property("Pawn") == self.board_positions[move_to_original].property("Pawn")
+                and move_to_original != i)
+        ]
+
+        # Update classical board occupant
         for prop in ["Color", "Pawn"]:
             self.board_positions[move_to].setProperty(prop, self.home_positions[move_from].property(prop))
             self.home_positions[move_from].setProperty(prop, None)
 
-        self.circuit.new_pawn([move_to])
+
+   
 
         if move_to != move_to_original:
-            self.circuit.capture([move_to], [move_to_original], captive_entanglement)
+            self.circuit.capture(
+                capturer=[move_to], 
+                captive=[move_to_original], 
+                captive_entanglement=captive_entanglement
+            )
 
         if to_next_turn:
             self.next_turn()
 
-    def measure_action(self, final_position = None, next_turn = True):
-        """Measure the circuit and update the board accordingly"""
-        # -------
-        # Measure
-        # -------
+    def measure_action(self, final_position=None, next_turn=True, force_all=False):
+      
+      
+        trigger_color = self.current_turn
+        trigger_pawn_index = 0
+        if final_position is not None:
+            # Example way: each color has 2 final slots: colorIndex*2, colorIndex*2+1
+            colorIndex = self.colors.index(trigger_color)
+            # final_position among [colorIndex*2, colorIndex*2+1] => decide pawn index
+            if final_position in [colorIndex * 2, colorIndex * 2 + 1]:
+                trigger_pawn_index = final_position - (colorIndex * 2)
+
+        # Create occupant->basis map from measure_basis_dict
+        # occupant_color in {Red,Green,Blue,Purple}
+        # occupant is measured by measure_basis_dict[(trigger_color, trigger_pawn_index)][occupant_color]
+        occupant_to_basis = {}
+        for pos in range(self.N):
+            color_ = self.board_positions[pos].property("Color")
+            if color_ is not None:
+                occupant_to_basis[pos] = self.measure_basis_dict[(trigger_color, trigger_pawn_index)][color_]
+            elif force_all:
+                # measure unoccupied in Z also if forcing all
+                occupant_to_basis[pos] = "Z"
+
+      
+            if pos not in occupant_to_basis:
+                occupant_to_basis[pos] = "Z"
+
+       
         measure_popup = MeasurePopup()
         measure_popup.show()
-        positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
+
+        (positions_after_measure,
+        out_with_freq,
+        nr_of_qubits_used) = self.circuit.measure(
+            occupant_bases=occupant_to_basis,
+            efficient=True
+        )
+        # positions_after_measure: set of positions that collapsed to 1 
+        #                          (meaning there's a pawn present).
+        # out_with_freq: debugging info
+        # nr_of_qubits_used: debugging info
+
+        # We close the popup
+        measure_popup.close()
         print(nr_of_qubits_used)
         print(out_with_freq)
-        print(positions)
+        print(positions_after_measure)
 
-        # ---------------------------------
-        # Remove pawns that no longer exist
-        # ---------------------------------
-        for pos in range(0,len(self.board_positions)):
-            if pos not in positions:
-                for prop in ["Color", "Pawn"]:
-                    self.board_positions[pos].setProperty(prop, None)
-        if final_position != None:
-            if not(32 in positions or 33 in positions):
+      
+        # -------------------------------------------------------------------
+        for pos in range(self.N):
+            if pos not in positions_after_measure:
+                # Remove occupant
+                self.board_positions[pos].setProperty("Color", None)
+                self.board_positions[pos].setProperty("Pawn", None)
+
+        # If final_position is not part of the board, also remove occupant if not measured
+        if final_position is not None:
+            colorIndex = self.colors.index(self.current_turn)
+            # double-check if that final was truly measured occupant or not
+            # (In your original code, final positions are not directly qubits, so you might simply remove occupant if not in measure.)
+            # For simplicity:
+            if 32 not in positions_after_measure and 33 not in positions_after_measure:
+                # remove occupant from final as well
                 self.final_positions[final_position].setProperty("Color", None)
                 self.final_positions[final_position].setProperty("Pawn", None)
 
-        # -------------------------------------------------------------------
-        # Check if a pawn was captured and put it back into its home position
-        # -------------------------------------------------------------------
-        pawns = [[pos.property("Color"), pos.property("Pawn")] for pos in self.board_positions + self.final_positions
-                if pos.property("Color") != None]
-        all_pawns = [[color, i] for i in [0,1] for color in self.colors]
-        pawns_at_spawn = [pawn for pawn in all_pawns if pawn not in pawns]
+       
+        # Build occupant lists from the updated board
+        occupant_map = {}  # (color, pawnIndex) -> list of positions
+        for pos in range(self.N):
+            c = self.board_positions[pos].property("Color")
+            p = self.board_positions[pos].property("Pawn")
+            if c is not None and p is not None:
+                occupant_map.setdefault((c, p), []).append(pos)
 
-        pos = self.home_positions
-        if [self.colors[0], 0] in pawns_at_spawn: pos[0].setProperty("Pawn", 0), pos[0].setProperty("Color", self.colors[0])
-        if [self.colors[0], 1] in pawns_at_spawn: pos[1].setProperty("Pawn", 1), pos[1].setProperty("Color", self.colors[0])
-        if [self.colors[1], 0] in pawns_at_spawn: pos[2].setProperty("Pawn", 0), pos[2].setProperty("Color", self.colors[1])
-        if [self.colors[1], 1] in pawns_at_spawn: pos[3].setProperty("Pawn", 1), pos[3].setProperty("Color", self.colors[1])
-        if [self.colors[2], 0] in pawns_at_spawn: pos[4].setProperty("Pawn", 0), pos[4].setProperty("Color", self.colors[2])
-        if [self.colors[2], 1] in pawns_at_spawn: pos[5].setProperty("Pawn", 1), pos[5].setProperty("Color", self.colors[2])
-        if [self.colors[3], 0] in pawns_at_spawn: pos[6].setProperty("Pawn", 0), pos[6].setProperty("Color", self.colors[3])
-        if [self.colors[3], 1] in pawns_at_spawn: pos[7].setProperty("Pawn", 1), pos[7].setProperty("Color", self.colors[3])
+        # Also check final positions (they might remain)
+        for i, fin_pos in enumerate(self.final_positions):
+            c = fin_pos.property("Color")
+            p = fin_pos.property("Pawn")
+            if c is not None and p is not None:
+                occupant_map.setdefault((c, p), []).append(32 + i)  # treat final as big index
 
-        measure_popup.close()
-        self.progress_bar.setValue(0)
-        if self.win() == False or next_turn == False:
+        # For each (color, pawn), keep only the largest index, remove others
+        # (largest index -> furthest ahead on board or final)
+        for (c, p), all_positions in occupant_map.items():
+            if len(all_positions) > 1:
+                best_pos = max(all_positions)  # your logic: higher index = further
+                # remove occupant from everything except best_pos
+                for posx in all_positions:
+                    if posx != best_pos:
+                        if posx < 32:
+                            self.board_positions[posx].setProperty("Color", None)
+                            self.board_positions[posx].setProperty("Pawn", None)
+                        else:
+                            # final position: posx-32 in final_positions
+                            fp_index = posx - 32
+                            self.final_positions[fp_index].setProperty("Color", None)
+                            self.final_positions[fp_index].setProperty("Pawn", None)
+
+        # Re-scan the board after removing duplicates
+        # (some pawns might have ended up all removed => add them to spawn)
+        all_pawns_now = [
+            (pos.property("Color"), pos.property("Pawn"))
+            for pos in (self.board_positions + self.final_positions)
+            if pos.property("Color") is not None
+        ]
+
+        # Check each of the total 8 possible pawns
+        for color_ in self.colors:
+            for pawnIdx in [0, 1]:
+                if (color_, pawnIdx) not in [(c_, p_) for (c_, p_) in all_pawns_now]:
+                    # That means it's lost => put it back in spawn
+                    # Find the correct spawn slot
+                    # Red => home_positions[0 or 1], Green => [2 or 3], Blue => [4 or 5], Purple => [6 or 7]
+                    colorIndex = self.colors.index(color_)
+                    spawn_slot = colorIndex * 2 + pawnIdx
+                    self.home_positions[spawn_slot].setProperty("Color", color_)
+                    self.home_positions[spawn_slot].setProperty("Pawn", pawnIdx)
+
+    
+        for pos in range(self.N):
+            c = self.board_positions[pos].property("Color")
+            p = self.board_positions[pos].property("Pawn")
+            if c is not None:
+                # Check if this occupant was newly placed from home
+                # (One simple check: if that spawn slot is now empty, it might have moved)
+                colorIndex = self.colors.index(c)
+                spawn_slot = colorIndex * 2 + p
+                if (self.home_positions[spawn_slot].property("Color") is None and
+                    self.home_positions[spawn_slot].property("Pawn") is None):
+                    # Then presumably it came from home. Let the circuit know.
+                    self.circuit.new_pawn([pos])
+
+       
+        self.update_stylesheets(deselect=True)
+        self.progress_bar.setValue(0)  # reset progress bar
+        if not self.win() and next_turn:
             self.next_turn()
 
     def win(self):

@@ -88,7 +88,7 @@ class circuit():
         
         self.qcircuit.swap(move_from[0], move_to)
 
-    def move(self, move_from : List[int], move_to : List[int]):
+    def move(self, move_from: List[int], move_to: List[int], add_cx: bool=False):
         """
         Description
         -----------
@@ -123,13 +123,18 @@ class circuit():
                          └───┘
         """
         if len(move_from) != 1:
-            raise ValueError("move_from must be in the form [int]; a list containing one integer")
+            raise ValueError("move_from must be a single integer in a list, e.g. [3]")
         if len(move_to) != 2:
-            raise ValueError("move_to must be in the form [int, int]; a list containing two integers")
-        
+            raise ValueError("move_to must be two integers in a list, e.g. [4,5]")
+
+        # Standard "superposition" gates:
         self.qcircuit.ch(move_from[0], move_to[0])
         self.qcircuit.swap(move_from[0], move_to[1])
         self.qcircuit.cx(move_to[0], move_to[1])
+
+    
+        if add_cx:
+            self.qcircuit.cx(move_to[0], move_to[1])
 
     def capture(self, capturer : List[int], captive : List[int], captive_entanglement : List[int]):
         """
@@ -230,40 +235,15 @@ class circuit():
 
 
     
-    def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024, efficient = False):
-        """
-        Description
-        -----------
-        Measures the circuit and returns the remaining positions in an array
-
-        Parameters
-        ----------
-        circuit : qiskit.QuantumCircuit
-            Quantum circuit that describes the positions of the board in qubits and gates
-        backend: Fake or real backend
-            Backend to which the circuit is transpiled (and run)
-        optimization_level: int
-            See https://docs.quantum.ibm.com/api/qiskit/transpiler_preset#generate_preset_pass_manager 
-        out_internal_measure : boolean
-            Outputs out_with_freq from the self._internal_measure if True. Mostly unused
-        
-        Returns
-        -------
-        output : np.array
-            Array containing the collapsed bits describing the remaining pawns
-        if out_internal_measure == True: out_with_freq : dictionary
-            Dictionary containing the measurement outcome in binary with its frequency, see ibm for exact documentation
-        
-        Notes
-        ------
-        It seems not necessary to have a backend and a simulator arguments. However, the fakesimulators are describing to which architecture
-        the circuit is compiled, while the simulator value makes sure that for the simulation itself a 'perfect' simulation is used,
-        namely the AerSimulator(), because the normal fakesimulators can not simulate this many bits
-
-        The simulator returns several hunderds of measurement. Therefore all possible outcomes have a certain frequency connected to them
-        This is used as a weight in selecting the final measurement from all the measurements using pseudo-random methods
-        Also some results are filtered out to control for errors
-        """
+    def measure(self, 
+        backend=FakeSherbrooke(),
+        optimization_level=2, 
+        simulator=True, 
+        out_internal_measure=False, 
+        shots=1024, 
+        efficient=False,
+        occupant_bases=None):
+       
         
         if efficient == False:
             filtered_data = self._internal_measure(backend = backend, optimization_level=optimization_level, simulator = simulator, shots = shots)
