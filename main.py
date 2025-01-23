@@ -228,7 +228,8 @@ class Main(QMainWindow):
             self.circuitfigure.show()
 
         super().__init__()
-        self.settings()
+        self.setWindowTitle("Quantum Ludo")
+        self.setGeometry(250,250,600,500)
         self.window()
         self.initUI()
         self.total_turns = 0
@@ -744,7 +745,7 @@ class Main(QMainWindow):
                 self.final_positions[final_pos].setProperty(prop, board_prop[i])
                 for pos in move_to:
                     if pos < 32:
-                        self.board_positions[pos].setProperty("Pawn", self.board_positions[move_from].property("Pawn"))
+                        self.board_positions[pos].setProperty(prop, self.board_positions[move_from].property(prop))
             if nr_of_final_positions == 2:
                 self.final_positions[final_pos].setProperty(prop, board_prop[i])
             self.board_positions[move_from].setProperty(prop, None)
@@ -883,11 +884,6 @@ class Main(QMainWindow):
             pos_color = pos.property('Color')
             pos_pawn = pos.property("Pawn")
             button_stylesheet(pos, color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))])
-
-
-    def settings(self):
-        self.setWindowTitle("Testing")
-        self.setGeometry(250,250,600,500)
 
     def update_drawn_circuit(self):
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False, show_idle_wires=False)
