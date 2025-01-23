@@ -6,7 +6,7 @@ The game Ludo, or more specifically [Mensch ärgere Dich nicht](https://en.wikip
 
 With this quantum implementation, there are two dice which cause the pawns to get into a superposition. The pawns can still capture other pawns, but this is done by quantum entanglement. Only after a measurement it is clear where pawns end up and if they have captured other pawns. Measurements (for all pawns at the same time) happen when a pawn get to their safe haven or if there are more then 20 spots filled in the game.
 
-<img src="https://github.com/SjdTl/QuantumEngineering/blob/main/positions/board.svg" width="500" height="300" />
+<img src="https://github.com/SjdTl/QuantumEngineering/blob/main/Figures/board.svg" width="500" height="300" />
 
 ## Quantum Element
 While the game is playing, a quantum circuit is created in the background. With each move, a perticular quantum gate is appended to the circuit. When a measurement should happen, the circuit is simulated using the AerSimulator or Qiskit or using physical IBM chips.
