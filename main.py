@@ -893,6 +893,7 @@ class Main(QMainWindow):
             # double-check if that final was truly measured occupant or not
             # (In your original code, final positions are not directly qubits, so you might simply remove occupant if not in measure.)
             # For simplicity:
+            # if not(32 in positions or 33 in positions): QUBITS are shared, so why not this?
             if 32 not in positions_after_measure and 33 not in positions_after_measure:
                 # remove occupant from final as well
                 self.final_positions[final_position].setProperty("Color", None)

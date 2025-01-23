@@ -128,6 +128,9 @@ class circuit():
             raise ValueError("move_to must be two integers in a list, e.g. [4,5]")
 
         # Standard "superposition" gates:
+        if add_cx == True:
+            self.qcircuit.cx(move_from[0], move_to[0])
+
         self.qcircuit.ch(move_from[0], move_to[0])
         self.qcircuit.swap(move_from[0], move_to[1])
         self.qcircuit.cx(move_to[0], move_to[1])
