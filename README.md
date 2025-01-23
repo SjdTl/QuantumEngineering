@@ -1,4 +1,6 @@
 # Quantum Ludo
+## Example game
+An example game and a walkthrough of the debug functions can be found [here](https://github.com/SjdTl/QuantumEngineering/blob/main/play.mp4) in this repository.
 ## Game description
 The game Ludo, or more specifically [Mensch ärgere Dich nicht](https://en.wikipedia.org/wiki/Mensch_%C3%A4rgere_Dich_nicht), is a game in which four players have four pawns which must get to their home haven. They each move over the path based on die throws. When two pawns go on top of eachother, the original pawn is captured and gets send back to its original position.
 
@@ -50,3 +52,6 @@ QuantumEngineering/
 │   └── ...                     # Other documentation figures
 └── screenshots/                # Contains the screenshots made of the game using f5
 ```
+
+
+
