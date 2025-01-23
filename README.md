@@ -33,7 +33,8 @@ And after pressing play the board opens and the game can be played.
 <img src="https://github.com/SjdTl/QuantumEngineering/blob/main/screenshots/capturing.svg" height = "200" />
 
 # High overview documentation
-<img src="https://github.com/SjdTl/QuantumEngineering/blob/main/Figures/coding_flow.svg" height = "500" />
+<img src="https://github.com/SjdTl/QuantumEngineering/blob/main/Figures/coding_flow.svg" height = "700" />
+The names in the arrows correspond to functions in the files
 
 # Repository structure
 ```
