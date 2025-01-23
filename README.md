@@ -47,7 +47,7 @@ QuantumEngineering/
 ├── game_logic/
 │   ├── quantum_circuits.py     # Contains a circuit class whose methods update a qiskit circuit based on a pawn move
 │   └── test_ui.py              # UI for testing quantum_circuits.py with actual pawns  
-├── positions/                  # Contains figures for the report and documentation
+├── Figures/                    # Contains figures for the report and documentation
 │   ├── general_implementation  # A high overview figure describing how the game operates in the backend
 │   └── ...                     # Other documentation figures
 └── screenshots/                # Contains the screenshots made of the game using f5
