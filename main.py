@@ -245,6 +245,7 @@ class Main(QMainWindow):
         self.file_menu = self.menu.addMenu("File")
         self.debug_menu = self.menu.addMenu("Debug")
         self.test_moves = self.menu.addMenu("Moves")
+        self.special_measure = self.menu.addMenu("Special measures")
         self.setMenuBar(self.menu)
         
         self.reset = Qt.QAction("Reset", self)
@@ -342,6 +343,12 @@ class Main(QMainWindow):
         for button, finish_type in zip(self.finish_position_buttons, finish_types):
             button.triggered.connect(lambda _, b = finish_type: self.start_in_finish_positions(fin_type = b))
             self.finish_positions_button.addAction(button)
+
+        trigger_options = [("Red",    0), ("Red",    1), ("Blue",   0), ("Blue",   1), ("Green",  0), ("Green",  1), ("Purple", 0), ("Purple", 1)]
+        measure_buttons = [Qt.QAction(rf"{c}, pawn {p}", self) for (c, p) in trigger_options]
+        for smeasure_button, trigger_option in zip(measure_buttons, trigger_options):
+            smeasure_button.triggered.connect(lambda: self.measure_action(test_trigger=trigger_option))
+            self.special_measure.addAction(smeasure_button)
 
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.undo_button)
@@ -825,17 +832,21 @@ class Main(QMainWindow):
         if to_next_turn:
             self.next_turn()
 
-    def measure_action(self, final_position=None, next_turn=True, force_all=False):
-      
-      
-        trigger_color = self.current_turn
-        trigger_pawn_index = 0
-        if final_position is not None:
-            # Example way: each color has 2 final slots: colorIndex*2, colorIndex*2+1
-            colorIndex = self.colors.index(trigger_color)
-            # final_position among [colorIndex*2, colorIndex*2+1] => decide pawn index
-            if final_position in [colorIndex * 2, colorIndex * 2 + 1]:
-                trigger_pawn_index = final_position - (colorIndex * 2)
+    def measure_action(self, final_position=None, next_turn=True, force_all=False, test_trigger = None):
+        """I haven't found the exact reason yet, but X gates are added twice (somethimes)"""
+
+        if test_trigger == None:
+            trigger_color = self.current_turn
+            trigger_pawn_index = 0
+            if final_position is not None:
+                # Example way: each color has 2 final slots: colorIndex*2, colorIndex*2+1
+                colorIndex = self.colors.index(trigger_color)
+                # final_position among [colorIndex*2, colorIndex*2+1] => decide pawn index
+                if final_position in [colorIndex * 2, colorIndex * 2 + 1]:
+                    trigger_pawn_index = final_position - (colorIndex * 2)
+        else:
+            trigger_color = test_trigger[0]
+            trigger_pawn_index = test_trigger[1]
 
         # The same can be achieved like this, since there are some specific rules
         # the pawns obey:
@@ -901,6 +912,7 @@ class Main(QMainWindow):
 
        
         # Build occupant lists from the updated board
+        # occupant_map = { (pos.property("Color"),pos.property("Pawn")):[] for pos in self.board_positions if pos.property("Color") != None}
         occupant_map = {}  # (color, pawnIndex) -> list of positions
         for pos in range(self.N):
             c = self.board_positions[pos].property("Color")
@@ -909,6 +921,7 @@ class Main(QMainWindow):
                 occupant_map.setdefault((c, p), []).append(pos)
 
         # Also check final positions (they might remain)
+        # What does this do
         for i, fin_pos in enumerate(self.final_positions):
             c = fin_pos.property("Color")
             p = fin_pos.property("Pawn")
@@ -927,6 +940,7 @@ class Main(QMainWindow):
                             self.board_positions[posx].setProperty("Color", None)
                             self.board_positions[posx].setProperty("Pawn", None)
                         else:
+                            # SHould not be here
                             # final position: posx-32 in final_positions
                             fp_index = posx - 32
                             self.final_positions[fp_index].setProperty("Color", None)
@@ -955,6 +969,8 @@ class Main(QMainWindow):
     
         #  I am confused as to what this does
         # Isn't it enough to just add all the pawns to the circuit without checks?
+        # self.circuit.new_pawn([pos for pos in self.board_positions if pos.property("Color") != None])
+
         for pos in range(self.N):
             c = self.board_positions[pos].property("Color")
             p = self.board_positions[pos].property("Pawn")

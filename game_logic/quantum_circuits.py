@@ -67,7 +67,7 @@ class circuit():
         >>>      └───┘
         >>> q_1: ─────
         """
-
+        
         self.qcircuit.x(move_to)
 
     def switch(self, move_from : List[int], move_to : List[int]):
