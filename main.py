@@ -286,7 +286,6 @@ class Main(QMainWindow):
 
         self.print_positions_button = Qt.QAction("Print positions", self)
         self.print_positions_button.triggered.connect(self.print_positions)
-        self.print_positions_button.setShortcut("Ctrl+Alt+P")
 
         self.print_move_options_button = Qt.QAction("Print move options", self)
         self.print_move_options_button.triggered.connect(self.print_all_options)
@@ -862,6 +861,17 @@ class Main(QMainWindow):
             if not(32 in positions or 33 in positions):
                 self.final_positions[final_position].setProperty("Color", None)
                 self.final_positions[final_position].setProperty("Pawn", None)
+
+        # If pawn appears in winning position, remove it from other positions
+        if final_position is not None and (32 in positions or 33 in positions):
+            pawn_num = final_position % 2
+            for pos in range(len(self.board_positions)):
+                if (pos in positions and 
+                    self.board_positions[pos].property("Color") == self.current_turn and
+                    self.board_positions[pos].property("Pawn") == pawn_num):
+                    print(f"Removing {self.current_turn} pawn {pawn_num} from position {pos} as it reached winning position")
+                    self.board_positions[pos].setProperty("Color", None)
+                    self.board_positions[pos].setProperty("Pawn", None)
 
         # Remove duplicate pawns keeping only the furthest one
         for color in self.colors:
