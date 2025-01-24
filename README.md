@@ -35,9 +35,9 @@ And after pressing play the board opens and the game can be played.
 # High overview documentation
 <img src="https://github.com/SjdTl/QuantumEngineering/blob/main/Figures/coding_flow.svg" height = "700" />
 The names in the arrows correspond to functions in the files, except the move arrow. That corresponds to three different functions:
-- Direct_move()
-- Move()
-- New pawn()
+ - Direct_move()
+ - Move()
+ - New pawn()
 
 # Repository structure
 ```
