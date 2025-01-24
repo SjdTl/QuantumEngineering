@@ -724,6 +724,7 @@ class Main(QMainWindow):
     def move(self, move_from, to_next_turn = True):
         """Move a pawn from one position to two others (in a superposition) and potentially capture another or two other pawns"""
         move_to = [(move_from + self.die_throws[0]) % 32, (move_from + self.die_throws[1]) % 32]
+        move_to.sort()
         captives = [pos for pos in move_to if self.board_positions[pos].property("Color") != None]
         normal_move = [pos for pos in move_to if self.board_positions[pos].property("Color") is None]
         captive_entanglement = [[i for i in range(0,32)
