@@ -228,7 +228,20 @@ class circuit():
         self.qcircuit.swap(move_from[0], move_to[0])
         self.qcircuit.unitary(U, [merge_in[0], move_to[0]])
 
-
+    def measure_basis(self, measure_bases : List[int]):
+        for i, measure_basis in enumerate(measure_bases):
+            if measure_basis != None:
+                if measure_basis == "Z":
+                    # Nothing happens
+                    pass
+                if measure_basis == "X":
+                    self.qcircuit.h(i)
+                if measure_basis == "Q":
+                    theta = np.pi/4  # Rotation angle for Q basis
+                    self.qcircuit.ry(theta, i)
+                if measure_basis == "T":
+                    theta = 3*np.pi/4  # Rotation angle for T basis
+                    self.qcircuit.ry(theta, i)
     
     def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024, efficient = False):
         """

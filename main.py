@@ -230,8 +230,8 @@ class Main(QMainWindow):
         super().__init__()
         self.setWindowTitle("Quantum Ludo")
         self.setGeometry(250,250,600,500)
-        self.window()
         self.initUI()
+        self.window()
         self.total_turns = 0
         self.next_turn()
 
@@ -242,6 +242,7 @@ class Main(QMainWindow):
         self.file_menu = self.menu.addMenu("File")
         self.debug_menu = self.menu.addMenu("Debug")
         self.test_moves = self.menu.addMenu("Moves")
+        self.special_measure = self.menu.addMenu("Special measures")
         self.setMenuBar(self.menu)
         
         self.reset = Qt.QAction("Reset", self)
@@ -258,7 +259,7 @@ class Main(QMainWindow):
 
         self.measure_button = Qt.QAction("Measure", self)
         self.measure_button.setShortcut("Ctrl+M")
-        self.measure_button.triggered.connect(self.measure_action)
+        self.measure_button.triggered.connect(lambda: self.measure_action(standard_basis=True))
 
         self.skip_turn = Qt.QAction("Skip turn", self)
         self.skip_turn.setShortcut("Ctrl+S")
@@ -340,6 +341,17 @@ class Main(QMainWindow):
             button.triggered.connect(lambda _, b = finish_type: self.start_in_finish_positions(fin_type = b))
             self.finish_positions_button.addAction(button)
 
+        trigger_options = [(self.colors[0],    0), (self.colors[0],    1), (self.colors[1],   0), (self.colors[1],   1), (self.colors[2],  0), (self.colors[2],  1), (self.colors[3], 0), (self.colors[3], 1)]
+        measure_buttons = [Qt.QAction(rf"{c}, pawn {p}", self) for (c, p) in trigger_options]
+        for smeasure_button, trigger_option in zip(measure_buttons, trigger_options):
+            smeasure_button.triggered.connect(lambda: self.measure_action(trigger=trigger_option))
+            self.special_measure.addAction(smeasure_button)
+
+        self.keep_circuit_open = Qt.QAction("Keep circuit open", self)
+        self.keep_circuit_open.triggered.connect(self.keep_circuit_open_action)
+        self.execpopup_measure = False
+        self.special_measure.addAction(self.keep_circuit_open)
+
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.undo_button)
         self.file_menu.addAction(self.throw_dice_button)
@@ -382,7 +394,7 @@ class Main(QMainWindow):
         Example
         --------
         # The second red pawn is present at position 2 on the board
-        self.board_positions[2].setProperty("Color", "Red")
+        self.board_positions[2].setProperty("Color", self.colors[0])
         self.board_positions[2].setProperty("Pawn", 1)
         self.board_positions[2].setProperty("Selected", False)
         """
@@ -419,6 +431,16 @@ class Main(QMainWindow):
         # Initialize the colours and the position that they occupy after going out of the home position (after throwing a 6)
         # ---------------------------------------------------------------------------------------------------------------------
         self.colors = ['Red', 'Green', 'Blue', 'Purple'] # MUST BE FOUR COLOURS
+        self.measure_basis_dict = {
+            (self.colors[0],    0): {self.colors[0]:    "Z", self.colors[1]:  "Q", self.colors[2]:   "X", self.colors[3]: "T"},
+            (self.colors[0],    1): {self.colors[0]:    "Z", self.colors[3]: "Q", self.colors[2]:   "X", self.colors[1]:  "T"},
+            (self.colors[2],   0): {self.colors[2]:   "Z", self.colors[3]: "Q", self.colors[0]:    "X", self.colors[1]:  "T"},
+            (self.colors[2],   1): {self.colors[2]:   "Z", self.colors[1]:  "Q", self.colors[0]:    "X", self.colors[3]: "T"},
+            (self.colors[1],  0): {self.colors[1]:  "Z", self.colors[0]:    "Q", self.colors[3]: "X", self.colors[2]:   "T"},
+            (self.colors[1],  1): {self.colors[1]:  "Z", self.colors[2]:   "Q", self.colors[3]: "X", self.colors[0]:    "T"},
+            (self.colors[3], 0): {self.colors[3]: "Z", self.colors[2]:   "Q", self.colors[1]:  "X", self.colors[0]:    "T"},
+            (self.colors[3], 1): {self.colors[3]: "Z", self.colors[0]:    "Q", self.colors[1]:  "X", self.colors[2]:   "T"}
+        }
         self.current_turn = self.colors[-1]
         self.start_position = {
             self.colors[0] : 26,
@@ -779,12 +801,33 @@ class Main(QMainWindow):
         if to_next_turn:
             self.next_turn()
 
-    def measure_action(self, final_position = None, next_turn = True):
+    def measure_action(self, final_position = None, next_turn = True, trigger = None, standard_basis = False):
         """Measure the circuit and update the board accordingly"""
+        if trigger != None and standard_basis == True:
+            raise ValueError("Cannot use both trigger and standard_basis")
+        if standard_basis == False:
+            if trigger == None:
+                trigger = (self.current_turn, final_position % 2)
+            measure_basis = [self.measure_basis_dict[trigger][pos.property("Color")]
+                             if pos.property("Color") is not None else None
+                             for pos in self.board_positions]
+            # measure basis of pawn that finished
+            if final_position is not None:
+                # Append same thing twice
+                measure_basis.append([self.measure_basis_dict[trigger][self.current_turn]] * 2)
+            else:
+                measure_basis.append([None, None])
+            self.circuit.measure_basis(measure_basis)
+
+        self.update_drawn_circuit()
+
         # -------
         # Measure
         # -------
         measure_popup = MeasurePopup()
+        if self.execpopup_measure:
+            self.circuitfigure.exec_()
+            
         measure_popup.show()
         positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
         print(nr_of_qubits_used)
@@ -938,6 +981,15 @@ class Main(QMainWindow):
         for positions in [self.home_positions, self.board_positions, self.final_positions]:
                 for i, pos in enumerate(positions):
                     pos.setText(rf'{str(i) if show==True else ""}')
+
+    def keep_circuit_open_action(self):
+        """Wait for the user to close the measure popup when measuring such that the circuit can be view"""
+        if self.keep_circuit_open.text() == "Keep circuit open":
+            self.keep_circuit_open.setText("Close circuit")
+            self.execpopup_measure = True
+        else:
+            self.keep_circuit_open.setText("Keep circuit open")
+            self.execpopup_measure = False
 
     def reset_app(self, next_turn = True):
         """Reset the game to the initial state. This is similar to starting a new game, except that the history is not cleared (e.g. ctrl+z still works)"""
