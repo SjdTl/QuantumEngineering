@@ -825,14 +825,16 @@ class Main(QMainWindow):
         # Measure
         # -------
         measure_popup = MeasurePopup()
-        if self.execpopup_measure:
-            self.circuitfigure.exec_()
+        
             
         measure_popup.show()
         positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
         print(nr_of_qubits_used)
         print(out_with_freq)
         print(positions)
+
+        if self.execpopup_measure:
+            self.circuitfigure.exec_()
 
         # ---------------------------------
         # Remove pawns that no longer exist
