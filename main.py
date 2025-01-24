@@ -790,29 +790,28 @@ class Main(QMainWindow):
         measure_popup = MeasurePopup()
         measure_popup.show()
 
-        # Get occupied positions and their colors for measurement basis selection
-        occupied_positions = {
-            i: pos.property("Color") 
-            for i, pos in enumerate(self.board_positions) 
-            if pos.property("Color") is not None
-        }
-
-        # Determine which pawn triggered the measurement
-        trigger_color = self.current_turn
-        trigger_pawn = None
+        # Only do basis selection if measurement was triggered by a final position
         if final_position is not None:
-            trigger_pawn = final_position % 2 + 1  # Convert final_position to pawn number (1 or 2)
-        else:
-            # Find the pawn that triggered measurement (the one that filled the progress bar)
-            # Default to pawn 1 if we can't determine which one
-            trigger_pawn = 1
+            # Get occupied positions and their colors for measurement basis selection
+            occupied_positions = {
+                i: pos.property("Color") 
+                for i, pos in enumerate(self.board_positions) 
+                if pos.property("Color") is not None
+            }
 
-        # Perform measurement with appropriate basis
-        positions, out_with_freq, nr_of_qubits_used = self.circuit.trigger_measurement(
-            trigger_color=trigger_color,
-            trigger_pawn=trigger_pawn,
-            occupied_positions=occupied_positions
-        )
+            # Determine which pawn triggered the measurement
+            trigger_color = self.current_turn
+            trigger_pawn = final_position % 2 + 1  # Convert final_position to pawn number (1 or 2)
+
+            # Perform measurement with appropriate basis
+            positions, out_with_freq, nr_of_qubits_used = self.circuit.trigger_measurement(
+                trigger_color=trigger_color,
+                trigger_pawn=trigger_pawn,
+                occupied_positions=occupied_positions
+            )
+        else:
+            # Do standard Z-basis measurement for 20-qubit limit
+            positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True)
 
         print(f"Qubits used: {nr_of_qubits_used}")
         print(f"Measurement frequencies: {out_with_freq}")
