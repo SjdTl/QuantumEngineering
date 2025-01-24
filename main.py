@@ -534,7 +534,7 @@ class Main(QMainWindow):
         self.update_stylesheets(deselect=True)
         occupied_positions_count = sum(1 for pos in self.board_positions if pos.property("Color") is not None)
         if occupied_positions_count >= 20:
-            QTimer.singleShot(500, lambda : self.measure_action(next_turn=False))
+            QTimer.singleShot(500, lambda : self.measure_action(next_turn=False, standard_basis=True))
             return  # Exit the method after measuring
         self.save()
 
