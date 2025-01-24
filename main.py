@@ -780,16 +780,43 @@ class Main(QMainWindow):
             self.next_turn()
 
     def measure_action(self, final_position = None, next_turn = True):
-        """Measure the circuit and update the board accordingly"""
+        """
+        Measure the circuit and update the board accordingly.
+        Handles measurement basis selection and post-measurement cleanup.
+        """
         # -------
         # Measure
         # -------
         measure_popup = MeasurePopup()
         measure_popup.show()
-        positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
-        print(nr_of_qubits_used)
-        print(out_with_freq)
-        print(positions)
+
+        # Get occupied positions and their colors for measurement basis selection
+        occupied_positions = {
+            i: pos.property("Color") 
+            for i, pos in enumerate(self.board_positions) 
+            if pos.property("Color") is not None
+        }
+
+        # Determine which pawn triggered the measurement
+        trigger_color = self.current_turn
+        trigger_pawn = None
+        if final_position is not None:
+            trigger_pawn = final_position % 2 + 1  # Convert final_position to pawn number (1 or 2)
+        else:
+            # Find the pawn that triggered measurement (the one that filled the progress bar)
+            # Default to pawn 1 if we can't determine which one
+            trigger_pawn = 1
+
+        # Perform measurement with appropriate basis
+        positions, out_with_freq, nr_of_qubits_used = self.circuit.trigger_measurement(
+            trigger_color=trigger_color,
+            trigger_pawn=trigger_pawn,
+            occupied_positions=occupied_positions
+        )
+
+        print(f"Qubits used: {nr_of_qubits_used}")
+        print(f"Measurement frequencies: {out_with_freq}")
+        print(f"Final positions: {positions}")
 
         # ---------------------------------
         # Remove pawns that no longer exist
@@ -798,10 +825,39 @@ class Main(QMainWindow):
             if pos not in positions:
                 for prop in ["Color", "Pawn"]:
                     self.board_positions[pos].setProperty(prop, None)
-        if final_position != None:
+
+        if final_position is not None:
             if not(32 in positions or 33 in positions):
                 self.final_positions[final_position].setProperty("Color", None)
                 self.final_positions[final_position].setProperty("Pawn", None)
+
+        # Group positions by color and pawn number
+        pawn_positions = {}
+        for pos in positions:
+            if pos >= 32:  # Skip final positions
+                continue
+            color = self.board_positions[pos].property("Color")
+            pawn = self.board_positions[pos].property("Pawn")
+            if color and pawn is not None:
+                key = (color, pawn)
+                if key not in pawn_positions:
+                    pawn_positions[key] = []
+                pawn_positions[key].append(pos)
+
+        # Keep only furthest position for each pawn
+        for (color, pawn), pos_list in pawn_positions.items():
+            if len(pos_list) > 1:
+                # Find furthest position relative to start
+                start = self.start_position[color]
+                # Calculate distances considering board wrap-around
+                distances = [(p - start) % 32 for p in pos_list]
+                furthest = pos_list[distances.index(max(distances))]
+                
+                # Remove all but the furthest position
+                for pos in pos_list:
+                    if pos != furthest:
+                        self.board_positions[pos].setProperty("Color", None)
+                        self.board_positions[pos].setProperty("Pawn", None)
 
         # -------------------------------------------------------------------
         # Check if a pawn was captured and put it back into its home position

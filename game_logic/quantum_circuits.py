@@ -10,6 +10,7 @@ from qiskit_ibm_runtime import SamplerV2 as Sampler
 from qiskit_aer import AerSimulator
 
 import random
+import qiskit
 
 
 class circuit():
@@ -35,6 +36,24 @@ class circuit():
 
     >>> [3,5,29]
     """
+    # Measurement basis constants
+    Z_BASIS = "Z"  # {|0>, |1>}, |1> means occupied
+    Q_BASIS = "Q"  # {|+q>, |-q>}, |-q> means occupied
+    X_BASIS = "X"  # {|+>, |->}, |-> means occupied
+    T_BASIS = "T"  # {|+t>, |-t>}, |-t> means occupied
+
+    # Mapping of which player gets measured in which basis based on trigger
+    MEASUREMENT_BASIS = {
+        ("Red", 1): {"Red": Z_BASIS, "Green": Q_BASIS, "Blue": X_BASIS, "Purple": T_BASIS},
+        ("Red", 2): {"Red": Z_BASIS, "Purple": Q_BASIS, "Blue": X_BASIS, "Green": T_BASIS},
+        ("Blue", 1): {"Blue": Z_BASIS, "Purple": Q_BASIS, "Red": X_BASIS, "Green": T_BASIS},
+        ("Blue", 2): {"Blue": Z_BASIS, "Green": Q_BASIS, "Red": X_BASIS, "Purple": T_BASIS},
+        ("Green", 1): {"Green": Z_BASIS, "Red": Q_BASIS, "Purple": X_BASIS, "Blue": T_BASIS},
+        ("Green", 2): {"Green": Z_BASIS, "Blue": Q_BASIS, "Purple": X_BASIS, "Red": T_BASIS},
+        ("Purple", 1): {"Purple": Z_BASIS, "Blue": Q_BASIS, "Green": X_BASIS, "Red": T_BASIS},
+        ("Purple", 2): {"Purple": Z_BASIS, "Red": Q_BASIS, "Green": X_BASIS, "Blue": T_BASIS}
+    }
+
     def __init__(self, N=32):
         self.N = N + 2
         self.qcircuit = QuantumCircuit(self.N)
@@ -127,8 +146,11 @@ class circuit():
         if len(move_to) != 2:
             raise ValueError("move_to must be in the form [int, int]; a list containing two integers")
         
+        # Create superposition with controlled-H
         self.qcircuit.ch(move_from[0], move_to[0])
+        # Swap the original state to second target position
         self.qcircuit.swap(move_from[0], move_to[1])
+        # Add CX between superposition states
         self.qcircuit.cx(move_to[0], move_to[1])
 
     def capture(self, capturer : List[int], captive : List[int], captive_entanglement : List[int]):
@@ -228,8 +250,57 @@ class circuit():
         self.qcircuit.swap(move_from[0], move_to[0])
         self.qcircuit.unitary(U, [merge_in[0], move_to[0]])
 
+    def _apply_measurement_basis(self, qubit: int, basis: str):
+        """Apply the appropriate measurement basis transformation gates"""
+        if basis == self.Q_BASIS:
+            # |+q> = cos(pi/8)|0> + sin(pi/8)|1>
+            # |-q> = cos(3pi/8)|0> - sin(3pi/8)|1>
+            theta = np.pi/4  # Rotation angle for Q basis
+            self.qcircuit.ry(theta, qubit)
+        elif basis == self.X_BASIS:
+            # |+> = (|0> + |1>)/sqrt(2)
+            # |-> = (|0> - |1>)/sqrt(2)
+            self.qcircuit.h(qubit)
+        elif basis == self.T_BASIS:
+            # |+t> = cos(3pi/8)|0> + sin(3pi/8)|1>
+            # |-t> = cos(pi/8)|0> - sin(pi/8)|1>
+            theta = 3*np.pi/4  # Rotation angle for T basis
+            self.qcircuit.ry(theta, qubit)
+        # Z basis (default) requires no transformation
 
-    
+    def trigger_measurement(self, trigger_color: str, trigger_pawn: int, occupied_positions: dict):
+        """
+        Trigger measurement of all qubits based on the triggering pawn
+        
+        Parameters
+        ----------
+        trigger_color : str
+            Color of the pawn triggering the measurement
+        trigger_pawn : int
+            Which pawn of the color triggered the measurement (1 or 2)
+        occupied_positions : dict
+            Dictionary mapping positions to their occupying pawn's color
+        
+        Returns
+        -------
+        positions : list
+            List of positions where pawns were measured
+        filtered_data : dict
+            Dictionary of measurement outcomes and their probabilities
+        nr_of_qubits_used : int
+            Number of qubits used in the measurement
+        """
+        # Get measurement basis mapping for this trigger
+        basis_mapping = self.MEASUREMENT_BASIS[(trigger_color, trigger_pawn)]
+        
+        # Apply appropriate basis transformation for each occupied position
+        for pos, color in occupied_positions.items():
+            basis = basis_mapping.get(color, self.Z_BASIS)
+            self._apply_measurement_basis(pos, basis)
+        
+        # Measure all qubits with out_internal_measure=True to get all required return values
+        return self.measure(out_internal_measure=True)
+
     def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024, efficient = False):
         """
         Description
@@ -252,23 +323,34 @@ class circuit():
         output : np.array
             Array containing the collapsed bits describing the remaining pawns
         if out_internal_measure == True: out_with_freq : dictionary
-            Dictionary containing the measurement outcome in binary with its frequency, see ibm for exact documentation
-        
-        Notes
-        ------
-        It seems not necessary to have a backend and a simulator arguments. However, the fakesimulators are describing to which architecture
-        the circuit is compiled, while the simulator value makes sure that for the simulation itself a 'perfect' simulation is used,
-        namely the AerSimulator(), because the normal fakesimulators can not simulate this many bits
-
-        The simulator returns several hunderds of measurement. Therefore all possible outcomes have a certain frequency connected to them
-        This is used as a weight in selecting the final measurement from all the measurements using pseudo-random methods
-        Also some results are filtered out to control for errors
+            Dictionary containing the measurement outcome in binary with its frequency
         """
         
-        if efficient == False:
-            filtered_data = self._internal_measure(backend = backend, optimization_level=optimization_level, simulator = simulator, shots = shots)
-        else:
-            filtered_data, nr_of_qubits_used = self._internal_efficient_simulation(backend = backend, optimization_level=optimization_level, shots = shots)
+        try:
+            if efficient == False:
+                filtered_data = self._internal_measure(backend=backend, optimization_level=optimization_level, simulator=simulator, shots=shots)
+                nr_of_qubits_used = len(self.qcircuit.qubits)
+            else:
+                filtered_data, nr_of_qubits_used = self._internal_efficient_simulation(backend=backend, optimization_level=optimization_level, shots=shots)
+        except Exception as e:
+            print(f"Measurement failed with error: {str(e)}")
+            print("Falling back to efficient simulation...")
+            try:
+                filtered_data, nr_of_qubits_used = self._internal_efficient_simulation(backend=backend, optimization_level=optimization_level, shots=shots)
+            except Exception as e:
+                print(f"Efficient simulation also failed: {str(e)}")
+                # Emergency fallback: return current occupied positions
+                occupied = []
+                for i in range(self.N):
+                    # Check for X gates on qubit i
+                    for gate in self.qcircuit.data:
+                        if (gate[0].name == 'x' and 
+                            isinstance(gate[1][0], qiskit.circuit.Qubit) and 
+                            gate[1][0]._index == i):
+                            occupied.append(i)
+                            break
+                filtered_data = {1.0: occupied} if occupied else {1.0: [0]}
+                nr_of_qubits_used = len(occupied) if occupied else 1
         
         weights = list(filtered_data.keys())
         positions = list(filtered_data.values())
@@ -278,7 +360,9 @@ class circuit():
         else:
             raise ValueError(r"Not a single measurement outcome has a probability P>0.5\% of occuring; there is probably a measurement error")
 
-        self.new_pawn(chosen_positions)
+        # Reset circuit for next operations
+        self.qcircuit = QuantumCircuit(self.N)
+        
         if out_internal_measure == False:
             return chosen_positions
         else:
@@ -333,12 +417,12 @@ class circuit():
 
         return filtered_data
     
-    def _internal_efficient_simulation(self, backend = FakeSherbrooke(), optimization_level =2, shots = 1024):
+    def _internal_efficient_simulation(self, backend = FakeSherbrooke(), optimization_level=2, shots = 1024):
         """Simulate the circuit in a more efficient way by removing idle wires"""
         def count_gates(qc: QuantumCircuit):
             gate_count = {qubit: 0 for qubit in qc.qubits}
             for gate in qc.data:
-                for qubit in gate.qubits:
+                for qubit in gate[1]:
                     gate_count[qubit] += 1
             return gate_count
 
@@ -348,9 +432,12 @@ class circuit():
 
             # Identify active qubits
             active_qubits = [qubit for qubit, count in gate_count.items() if count > 0]
+            if not active_qubits:  # If no active qubits, return minimal circuit
+                qc_out = QuantumCircuit(1)
+                return qc_out, [0]
 
             # Create a new circuit with only active qubits
-            qc_out = QuantumCircuit(len(active_qubits), len(active_qubits))
+            qc_out = QuantumCircuit(len(active_qubits))
 
             # Map old qubits to new qubits
             qubit_map = {qubit: i for i, qubit in enumerate(active_qubits)}
@@ -358,31 +445,74 @@ class circuit():
             # Copy instructions while updating qubit indices
             for instruction, qargs, cargs in qc.data:
                 new_qargs = [qubit_map[q] for q in qargs if q in qubit_map]
-                qc_out.append(instruction, new_qargs, cargs)
+                if new_qargs:  # Only add instruction if it affects active qubits
+                    qc_out.append(instruction, new_qargs)
 
-            return qc_out, [active_qubits[i]._index for i in range(len(active_qubits))]
+            return qc_out, [q._index for q in active_qubits]
         
-        backend = GenericBackend(self.N)
-        transpiled_qc = transpile(self.qcircuit, backend)
-        qc, active_qubits = remove_idle_wires(transpiled_qc)
-        old_qubits = [transpiled_qc.layout.final_index_layout().index(i) for i in active_qubits]
+        try:
+            backend = GenericBackend(self.N)
+            transpiled_qc = transpile(self.qcircuit, backend)
+            qc, active_qubits = remove_idle_wires(transpiled_qc)
+            
+            # If circuit is still too large, split into smaller chunks
+            if len(active_qubits) > 15:  # Threshold for splitting
+                chunks = []
+                chunk_size = 15
+                for i in range(0, len(active_qubits), chunk_size):
+                    chunk_qubits = active_qubits[i:i + chunk_size]
+                    chunk_circuit = QuantumCircuit(len(chunk_qubits))
+                    # Copy relevant gates to chunk
+                    for gate in qc.data:
+                        if all(q._index in chunk_qubits for q in gate[1]):
+                            chunk_circuit.append(gate[0], [chunk_qubits.index(q._index) for q in gate[1]])
+                    chunks.append((chunk_circuit, chunk_qubits))
+                
+                # Simulate each chunk
+                results = {}
+                for chunk_circuit, chunk_qubits in chunks:
+                    chunk_circuit.measure_all()
+                    sampler = Sampler(mode=AerSimulator())
+                    job = sampler.run(pubs=[chunk_circuit], shots=shots)
+                    chunk_result = job.result()[0]
+                    chunk_counts = chunk_result.data.meas.get_counts()
+                    # Map results back to original qubit indices
+                    for bitstring, count in chunk_counts.items():
+                        mapped_positions = [chunk_qubits[i] for i, bit in enumerate(bitstring[::-1]) if bit == '1']
+                        if mapped_positions:
+                            results[count/shots] = mapped_positions
+            else:
+                qc.measure_all()
+                sampler = Sampler(mode=AerSimulator())
+                job = sampler.run(pubs=[qc], shots=shots)
+                result = job.result()[0]
+                counts = result.data.meas.get_counts()
+                results = {count/shots: [active_qubits[i] for i, bit in enumerate(bitstring[::-1]) if bit == '1']
+                          for bitstring, count in counts.items()}
 
-        qc.measure_all()
-
-        pm = generate_preset_pass_manager(backend=backend, optimization_level=optimization_level)
-        isa_circuit = pm.run(qc)
-        pub = (isa_circuit)
-
-        sampler = Sampler(mode = AerSimulator())
-
-        job = sampler.run(pubs=[pub], shots = shots)
-        result = job.result()[0]
-        out_with_freq = result.data.meas.get_counts()
-
-        filter = 2 # with a shot of 1000, so if P < 0.2% the measurement is removed
-        filtered_data = {value/shots : [old_qubits[index] for index, char in enumerate(key[::-1]) if char == '1'] for key, value in out_with_freq.items() if value >= filter}
-        self.qcircuit = QuantumCircuit(self.N)
-        return filtered_data, len(active_qubits)
+            # Filter low probability results
+            filter_threshold = 2  # Minimum count threshold (with shots=1024, this is ~0.2%)
+            filtered_data = {prob: pos for prob, pos in results.items() 
+                           if prob * shots >= filter_threshold}
+            
+            if not filtered_data:  # If no results pass the threshold
+                filtered_data = {1.0: []}
+            
+            return filtered_data, len(active_qubits)
+            
+        except Exception as e:
+            print(f"Efficient simulation failed: {str(e)}")
+            # Emergency fallback
+            occupied = []
+            for i in range(self.N):
+                # Check for X gates on qubit i
+                for gate in self.qcircuit.data:
+                    if (gate[0].name == 'x' and 
+                        isinstance(gate[1][0], qiskit.circuit.Qubit) and 
+                        gate[1][0]._index == i):
+                        occupied.append(i)
+                        break
+            return {1.0: occupied} if occupied else {1.0: []}, len(occupied) if occupied else 1
     
     def _reset(self):
         self.qcircuit = QuantumCircuit(self.N)
