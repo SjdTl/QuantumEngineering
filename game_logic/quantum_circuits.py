@@ -126,7 +126,7 @@ class circuit():
             raise ValueError("move_from must be in the form [int]; a list containing one integer")
         if len(move_to) != 2:
             raise ValueError("move_to must be in the form [int, int]; a list containing two integers")
-        
+        self.qcircuit.cx(move_from[0], move_to[0])
         self.qcircuit.ch(move_from[0], move_to[0])
         self.qcircuit.swap(move_from[0], move_to[1])
         self.qcircuit.cx(move_to[0], move_to[1])

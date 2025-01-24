@@ -344,7 +344,7 @@ class Main(QMainWindow):
         trigger_options = [(self.colors[0],    0), (self.colors[0],    1), (self.colors[1],   0), (self.colors[1],   1), (self.colors[2],  0), (self.colors[2],  1), (self.colors[3], 0), (self.colors[3], 1)]
         measure_buttons = [Qt.QAction(rf"{c}, pawn {p}", self) for (c, p) in trigger_options]
         for smeasure_button, trigger_option in zip(measure_buttons, trigger_options):
-            smeasure_button.triggered.connect(lambda: self.measure_action(trigger=trigger_option))
+            smeasure_button.triggered.connect(lambda _, b = trigger_option: self.measure_action(trigger=b))
             self.special_measure.addAction(smeasure_button)
 
         self.keep_circuit_open = Qt.QAction("Keep circuit open", self)
