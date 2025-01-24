@@ -808,6 +808,9 @@ class Main(QMainWindow):
 
     def measure_action(self, final_position = None, next_turn = True, trigger = None, standard_basis = False):
         """Measure the circuit and update the board accordingly"""
+        # Add debug flag to force duplicate pawns
+        force_duplicate = False  # For testing duplicate pawn removal
+        
         if (trigger != None and self.force_global_standard_basis == True) or self.force_global_standard_basis == False:
             if standard_basis == False:
                 if trigger == None:
@@ -830,9 +833,17 @@ class Main(QMainWindow):
         # -------
         measure_popup = MeasurePopup()
         
-            
         measure_popup.show()
         positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
+        
+        # Force a duplicate pawn for testing
+        if force_duplicate and len(positions) > 0:
+            # Add a duplicate pawn at position + 1
+            for pos in positions[:]:  # Use slice to avoid modifying while iterating
+                if pos < len(self.board_positions) - 1:  # Ensure we don't go out of bounds
+                    positions.append((pos + 1) % 32)
+                    print(f"DEBUG: Forced duplicate pawn at position {(pos + 1) % 32}")
+        
         print(nr_of_qubits_used)
         print(out_with_freq)
         print(positions)
@@ -852,23 +863,28 @@ class Main(QMainWindow):
                 self.final_positions[final_position].setProperty("Color", None)
                 self.final_positions[final_position].setProperty("Pawn", None)
 
-        # -------------------------------------------------------------------
-        # Check if a pawn was captured and put it back into its home position
-        # -------------------------------------------------------------------
-        pawns = [[pos.property("Color"), pos.property("Pawn")] for pos in self.board_positions + self.final_positions
-                if pos.property("Color") != None]
-        all_pawns = [[color, i] for i in [0,1] for color in self.colors]
-        pawns_at_spawn = [pawn for pawn in all_pawns if pawn not in pawns]
-
-        pos = self.home_positions
-        if [self.colors[0], 0] in pawns_at_spawn: pos[0].setProperty("Pawn", 0), pos[0].setProperty("Color", self.colors[0])
-        if [self.colors[0], 1] in pawns_at_spawn: pos[1].setProperty("Pawn", 1), pos[1].setProperty("Color", self.colors[0])
-        if [self.colors[1], 0] in pawns_at_spawn: pos[2].setProperty("Pawn", 0), pos[2].setProperty("Color", self.colors[1])
-        if [self.colors[1], 1] in pawns_at_spawn: pos[3].setProperty("Pawn", 1), pos[3].setProperty("Color", self.colors[1])
-        if [self.colors[2], 0] in pawns_at_spawn: pos[4].setProperty("Pawn", 0), pos[4].setProperty("Color", self.colors[2])
-        if [self.colors[2], 1] in pawns_at_spawn: pos[5].setProperty("Pawn", 1), pos[5].setProperty("Color", self.colors[2])
-        if [self.colors[3], 0] in pawns_at_spawn: pos[6].setProperty("Pawn", 0), pos[6].setProperty("Color", self.colors[3])
-        if [self.colors[3], 1] in pawns_at_spawn: pos[7].setProperty("Pawn", 1), pos[7].setProperty("Color", self.colors[3])
+        # Remove duplicate pawns keeping only the furthest one
+        for color in self.colors:
+            for pawn in [0, 1]:
+                # Find all positions for this color/pawn combination
+                pawn_positions = []
+                for pos in range(len(self.board_positions)):
+                    if (pos in positions and 
+                        self.board_positions[pos].property("Color") == color and 
+                        self.board_positions[pos].property("Pawn") == pawn):
+                        pawn_positions.append(pos)
+                
+                # If there are duplicates, keep only the furthest one
+                if len(pawn_positions) > 1:
+                    start_pos = self.start_position[color]
+                    furthest_pos = max(pawn_positions, key=lambda x: (x - start_pos) % 32)
+                    
+                    # Remove all but the furthest position
+                    for pos in pawn_positions:
+                        if pos != furthest_pos:
+                            print(f"Removing duplicate {color} pawn {pawn} at position {pos}, keeping position {furthest_pos}")
+                            self.board_positions[pos].setProperty("Color", None)
+                            self.board_positions[pos].setProperty("Pawn", None)
 
         measure_popup.close()
         self.progress_bar.setValue(0)
