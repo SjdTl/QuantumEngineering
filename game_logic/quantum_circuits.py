@@ -243,13 +243,11 @@ class circuit():
                     theta = 3*np.pi/4  # Rotation angle for T basis
                     self.qcircuit.ry(theta, i)
     
-    def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024, efficient = False, force_duplicate=True):
+    def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024, efficient = False):
         """
         Description
         -----------
-        Measures the circuit and returns the remaining positions in an array. 
-        If multiple instances of the same pawn appear after measurement on the board (positions 0-31),
-        only keeps the furthest one. Final positions (32+) are left unchanged.
+        Measures the circuit and returns the remaining positions in an array
 
         Parameters
         ----------
@@ -261,8 +259,6 @@ class circuit():
             See https://docs.quantum.ibm.com/api/qiskit/transpiler_preset#generate_preset_pass_manager 
         out_internal_measure : boolean
             Outputs out_with_freq from the self._internal_measure if True. Mostly unused
-        force_duplicate : boolean
-            If True, forces the measurement outcome to be one where pawns duplicate (for testing)
         
         Returns
         -------
@@ -291,48 +287,15 @@ class circuit():
         positions = list(filtered_data.values())
 
         if weights:
-            if force_duplicate:
-                # Find the first outcome that has duplicate pawns
-                for pos_list in positions:
-                    board_pos = [p for p in pos_list if p < 32]
-                    if len(board_pos) != len(set(p % 2 for p in board_pos)):
-                        chosen_positions = pos_list
-                        break
-                else:
-                    # If no duplicates found, use random choice
-                    chosen_positions = random.choices(positions, weights=weights, k=1)[0]
-            else:
-                chosen_positions = random.choices(positions, weights=weights, k=1)[0]
+            chosen_positions = random.choices(positions, weights=weights, k=1)[0]
         else:
             raise ValueError(r"Not a single measurement outcome has a probability P>0.5\% of occuring; there is probably a measurement error")
 
-        # Separate board positions and final positions
-        board_positions = [pos for pos in chosen_positions if pos < 32]
-        final_positions = [pos for pos in chosen_positions if pos >= 32]
-        
-        # For board positions, keep only furthest position for each pawn
-        unique_board_positions = []
-        if board_positions:
-            # Sort positions by distance from start (higher index = further)
-            board_positions.sort(reverse=True)
-            # Keep first occurrence (furthest position) for each pawn
-            seen_pawns = set()
-            for pos in board_positions:
-                pawn_id = pos % 2  # Determine which pawn this position belongs to
-                if pawn_id not in seen_pawns:
-                    unique_board_positions.append(pos)
-                    seen_pawns.add(pawn_id)
-                else:
-                    print(f"Removed duplicate pawn (id: {pawn_id}) at position {pos} as it appeared after measurement")
-        
-        # Combine filtered board positions with unfiltered final positions
-        unique_positions = unique_board_positions + final_positions
-
-        self.new_pawn(unique_positions)
+        self.new_pawn(chosen_positions)
         if out_internal_measure == False:
-            return unique_positions
+            return chosen_positions
         else:
-            return unique_positions, filtered_data, nr_of_qubits_used
+            return chosen_positions, filtered_data, nr_of_qubits_used
     
     def draw(self, mpl_open = True, term_draw = True, show_idle_wires = True):
         """
