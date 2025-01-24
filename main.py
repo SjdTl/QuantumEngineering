@@ -249,6 +249,10 @@ class Main(QMainWindow):
         self.reset.setShortcut("Ctrl+R")
         self.reset.triggered.connect(self.reset_app)
 
+        self.force_standard_basis_button = Qt.QAction("Set measurement basis to be dependent on pawn", self)
+        self.force_standard_basis_button.triggered.connect(lambda: self.force_standard_basis())
+        self.force_global_standard_basis = True
+
         self.screenshot = Qt.QAction("Screenshot", self)
         self.screenshot.setShortcut("f5")
         self.screenshot.triggered.connect(self.save_as_svg)
@@ -356,6 +360,7 @@ class Main(QMainWindow):
         self.file_menu.addAction(self.undo_button)
         self.file_menu.addAction(self.throw_dice_button)
         self.file_menu.addAction(self.screenshot)
+        self.file_menu.addAction(self.force_standard_basis_button)
         self.debug_menu.addAction(self.measure_button)
         self.debug_menu.addAction(self.skip_turn)
         self.debug_menu.addAction(self.select_dice_button)
@@ -803,21 +808,20 @@ class Main(QMainWindow):
 
     def measure_action(self, final_position = None, next_turn = True, trigger = None, standard_basis = False):
         """Measure the circuit and update the board accordingly"""
-        if trigger != None and standard_basis == True:
-            raise ValueError("Cannot use both trigger and standard_basis")
-        if standard_basis == False:
-            if trigger == None:
-                trigger = (self.current_turn, final_position % 2)
-            measure_basis = [self.measure_basis_dict[trigger][pos.property("Color")]
-                             if pos.property("Color") is not None else None
-                             for pos in self.board_positions]
-            # measure basis of pawn that finished
-            if final_position is not None:
-                # Append same thing twice
-                measure_basis.append([self.measure_basis_dict[trigger][self.current_turn]] * 2)
-            else:
-                measure_basis.append([None, None])
-            self.circuit.measure_basis(measure_basis)
+        if (trigger != None and self.force_global_standard_basis == True) or self.force_global_standard_basis == False:
+            if standard_basis == False:
+                if trigger == None:
+                    trigger = (self.current_turn, final_position % 2)
+                measure_basis = [self.measure_basis_dict[trigger][pos.property("Color")]
+                                if pos.property("Color") is not None else None
+                                for pos in self.board_positions]
+                # measure basis of pawn that finished
+                if final_position is not None:
+                    # Append same thing twice
+                    measure_basis.append([self.measure_basis_dict[trigger][self.current_turn]] * 2)
+                else:
+                    measure_basis.append([None, None])
+                self.circuit.measure_basis(measure_basis)
 
         self.update_drawn_circuit()
 
@@ -992,6 +996,14 @@ class Main(QMainWindow):
         else:
             self.keep_circuit_open.setText("Keep circuit open")
             self.execpopup_measure = False
+
+    def force_standard_basis(self):
+        if self.force_standard_basis_button.text() == "Set measurement basis to be dependent on pawn":
+            self.force_standard_basis_button.setText("Force all measurement in standard basis")
+            self.force_global_standard_basis = False
+        else:
+            self.force_standard_basis_button.setText("Set measurement basis to be dependent on pawn")
+            self.force_global_standard_basis = True
 
     def reset_app(self, next_turn = True):
         """Reset the game to the initial state. This is similar to starting a new game, except that the history is not cleared (e.g. ctrl+z still works)"""
