@@ -337,9 +337,6 @@ class circuit():
             chosen_positions = random.choices(positions, weights=weights, k=1)[0]
         else:
             raise ValueError(r"Not a single measurement outcome has a probability P>0.5\% of occuring; there is probably a measurement error")
-
-        # Reset circuit after measurement
-        self.qcircuit = QuantumCircuit(self.N)
         
         if out_internal_measure == False:
             return chosen_positions

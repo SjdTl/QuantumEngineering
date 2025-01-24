@@ -817,6 +817,15 @@ class Main(QMainWindow):
         print(f"Measurement frequencies: {out_with_freq}")
         print(f"Final positions: {positions}")
 
+        # Reset and rebuild circuit based on measurement results
+        self.circuit._reset()
+        for pos in positions:
+            if pos < 32:  # Only for board positions, not final positions
+                self.circuit.new_pawn([pos])
+        
+        # Update the circuit display
+        self.update_drawn_circuit()
+
         # ---------------------------------
         # Remove pawns that no longer exist
         # ---------------------------------
