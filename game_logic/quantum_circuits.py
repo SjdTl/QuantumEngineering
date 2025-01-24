@@ -457,63 +457,32 @@ class circuit():
             transpiled_qc = transpile(self.qcircuit, backend)
             qc, active_qubits = remove_idle_wires(transpiled_qc)
             
-            # If circuit is still too large, split into smaller chunks
-            if len(active_qubits) > 15:  # Threshold for splitting
-                chunks = []
-                chunk_size = 15
-                for i in range(0, len(active_qubits), chunk_size):
-                    chunk_qubits = active_qubits[i:i + chunk_size]
-                    chunk_circuit = QuantumCircuit(len(chunk_qubits))
-                    # Copy relevant gates to chunk
-                    for gate in qc.data:
-                        if all(q._index in chunk_qubits for q in gate[1]):
-                            chunk_circuit.append(gate[0], [chunk_qubits.index(q._index) for q in gate[1]])
-                    chunks.append((chunk_circuit, chunk_qubits))
-                
-                # Simulate each chunk
-                results = {}
-                for chunk_circuit, chunk_qubits in chunks:
-                    chunk_circuit.measure_all()
-                    sampler = Sampler(mode=AerSimulator())
-                    job = sampler.run(pubs=[chunk_circuit], shots=shots)
-                    chunk_result = job.result()[0]
-                    chunk_counts = chunk_result.data.meas.get_counts()
-                    # Map results back to original qubit indices
-                    for bitstring, count in chunk_counts.items():
-                        mapped_positions = [chunk_qubits[i] for i, bit in enumerate(bitstring[::-1]) if bit == '1']
-                        if mapped_positions:
-                            results[count/shots] = mapped_positions
-            else:
-                qc.measure_all()
-                sampler = Sampler(mode=AerSimulator())
-                job = sampler.run(pubs=[qc], shots=shots)
-                result = job.result()[0]
-                counts = result.data.meas.get_counts()
-                results = {count/shots: [active_qubits[i] for i, bit in enumerate(bitstring[::-1]) if bit == '1']
-                          for bitstring, count in counts.items()}
-
-            # Filter low probability results
-            filter_threshold = 2  # Minimum count threshold (with shots=1024, this is ~0.2%)
-            filtered_data = {prob: pos for prob, pos in results.items() 
-                           if prob * shots >= filter_threshold}
+            # Add measurements
+            qc.measure_all()
             
-            if not filtered_data:  # If no results pass the threshold
-                filtered_data = {1.0: []}
+            # Run simulation
+            sampler = Sampler(mode=AerSimulator())
+            job = sampler.run(pubs=[qc], shots=shots)
+            result = job.result()[0]
+            counts = result.data.meas.get_counts()
             
-            return filtered_data, len(active_qubits)
+            # Map results back to original qubit indices
+            results = {}
+            filter_threshold = 5  # Minimum count threshold (with shots=1024, this is ~0.5%)
+            for bitstring, count in counts.items():
+                if count >= filter_threshold:
+                    mapped_positions = [active_qubits[i] for i, bit in enumerate(bitstring[::-1]) if bit == '1']
+                    results[count/shots] = mapped_positions
+            
+            if not results:  # If no results pass the threshold
+                results = {1.0: []}
+            
+            return results, len(active_qubits)
             
         except Exception as e:
             print(f"Efficient simulation failed: {str(e)}")
             # Emergency fallback
-            occupied = []
-            for i in range(self.N):
-                # Check for X gates on qubit i
-                for gate in self.qcircuit.data:
-                    if (gate[0].name == 'x' and 
-                        isinstance(gate[1][0], qiskit.circuit.Qubit) and 
-                        gate[1][0]._index == i):
-                        occupied.append(i)
-                        break
+            occupied = self._get_occupied_positions()
             return {1.0: occupied} if occupied else {1.0: []}, len(occupied) if occupied else 1
     
     def _reset(self):
