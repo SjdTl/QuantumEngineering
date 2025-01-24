@@ -243,7 +243,7 @@ class circuit():
                     theta = 3*np.pi/4  # Rotation angle for T basis
                     self.qcircuit.ry(theta, i)
     
-    def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024, efficient = False, force_duplicate=True):
+    def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024, efficient = False, force_duplicate=False):
         """
         Description
         -----------
