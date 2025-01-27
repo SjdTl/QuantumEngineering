@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QLabel
+from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QLabel, QDialog, QLineEdit
 from PyQt5.QtGui import QIcon, QFont, QPixmap
 from PyQt5.QtCore import Qt
 import sys
@@ -29,10 +29,36 @@ QPushButton:hover {
 QPushButton:pressed {
     background-color: #4169E1;
 }
+QLineEdit {
+    background-color: #4682B4;
+    color: white;
+    font-size: 10px;
+    border-radius: 15px;
+    padding: 10px;
+}
 """
+class enterAPI(QDialog):
+    """Enter api in window"""
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Enter API")
+        self.setFixedSize(400, 200)
+        self.setStyleSheet(stylesheet)
+
+        self.api = QLineEdit(self)
+        self.api.setGeometry(50, 50, 300, 30)
+        self.api.setEchoMode(QLineEdit.Password)
+
+        self.ok_button = QPushButton("OK", self)
+        self.ok_button.setGeometry(150, 100, 100, 40)
+        self.ok_button.clicked.connect(self.ok)
+
+    def ok(self):
+        self.close()
 
 class StartScreen(QMainWindow):
     def __init__(self):
+        self.token = None
         super().__init__()
         self.main_window = None  # Placeholder for Main window
         self.setup_ui()
@@ -45,6 +71,7 @@ class StartScreen(QMainWindow):
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
 
+        self.service = None
         # Background Image
         background_label = QLabel(central_widget)
         pixmap = QPixmap(os.path.join(dir_path, "a"))
@@ -59,9 +86,9 @@ class StartScreen(QMainWindow):
         title.setAlignment(Qt.AlignCenter)
 
         # Play Button with Pawn
-        play_button = QPushButton("PLAY", central_widget)
+        play_button = QPushButton("PLAY (simulator)", central_widget)
         play_button.setGeometry(300, 180, 250, 60)
-        play_button.clicked.connect(lambda _, b = False: self.play(b))
+        play_button.clicked.connect(lambda _, b = True: self.play(simulation=b))
 
         play_pawn = QPushButton(central_widget)
         play_pawn.setIcon(QIcon(os.path.join(dir_path, "UI figures", "red_pawn.svg")))
@@ -70,16 +97,23 @@ class StartScreen(QMainWindow):
         play_pawn.setGeometry(230, 180, 60, 60)
 
         # Help Button with Pawn
-        debug_button = QPushButton("PLAY (DEBUG)", central_widget)
-        debug_button.clicked.connect(lambda _, b=True : self.play(b))
+        self.token = None
+        self.hardware_button = QPushButton("PLAY (hardware)", central_widget)
+        self.hardware_button.clicked.connect(lambda _, b = False: self.play(simulation=b))
+        self.hardware_button.setDisabled(True)
 
-        debug_button.setGeometry(300, 260, 250, 60)
+        self.hardware_button.setGeometry(300, 260, 250, 60)
 
         debug_pawn = QPushButton(central_widget)
         debug_pawn.setIcon(QIcon(os.path.join(dir_path, "UI figures", "blue_pawn.svg")))
         debug_pawn.setFixedSize(60, 60)
         debug_pawn.setIconSize(debug_pawn.size())
         debug_pawn.setGeometry(230, 260, 60, 60)
+
+        self.login_button = QPushButton("LOGIN", central_widget)
+        self.login_button.setGeometry(300, 420, 250, 60)
+        self.login_button.clicked.connect(self.login)
+
 
         # Options Button with Pawn
         tutorial_button = QPushButton("TUTORIAL", central_widget)
@@ -90,11 +124,27 @@ class StartScreen(QMainWindow):
         tutorial_pawn.setFixedSize(60, 60)
         tutorial_pawn.setIconSize(tutorial_pawn.size())
         tutorial_pawn.setGeometry(230, 340, 60, 60)
-
-    def play(self, debug = False):
+    
+    def login(self):
+        self.api = enterAPI()
+        self.api.exec_()
+        self.token = self.api.api.text()
+        from qiskit_ibm_runtime import QiskitRuntimeService
+ 
+        QiskitRuntimeService.save_account(
+        token=self.token,
+        channel="ibm_quantum",
+        overwrite=True # `channel` distinguishes between different account types
+        )
+        self.service = QiskitRuntimeService()
+        self.hardware_button.setEnabled(True)
+        self.login_button.setDisabled(True)
+    
+    def play(self, simulation=True, debug = False):
         self.save_as_svg()
         self.close()  # Close the Start screen
-        self.main_window = Main(debug=debug)  # Create instance of Main window
+
+        self.main_window = Main(debug=debug, simulation=simulation, service = self.service)  # Create instance of Main window
         self.main_window.show()  # Show Main window
 
     def save_as_svg(self):

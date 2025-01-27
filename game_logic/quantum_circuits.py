@@ -243,7 +243,7 @@ class circuit():
                     theta = 3*np.pi/4  # Rotation angle for T basis
                     self.qcircuit.ry(theta, i)
     
-    def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024, efficient = False):
+    def measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, out_internal_measure=False, shots=1024, efficient = False, service = None):
         """
         Description
         -----------
@@ -277,9 +277,15 @@ class circuit():
         This is used as a weight in selecting the final measurement from all the measurements using pseudo-random methods
         Also some results are filtered out to control for errors
         """
-        
-        if efficient == False:
-            filtered_data = self._internal_measure(backend = backend, optimization_level=optimization_level, simulator = simulator, shots = shots)
+        if service is None and simulator == False:
+            raise ValueError("If simulator is False, the service must be given")
+
+        if efficient == False or simulator == False:
+            filtered_data = self._internal_measure(backend = backend, optimization_level=optimization_level, simulator = simulator, shots = shots, service = service)
+            if simulator == False:
+                nr_of_qubits_used = self.N
+            else:
+                nr_of_qubits_used = 127
         else:
             filtered_data, nr_of_qubits_used = self._internal_efficient_simulation(backend = backend, optimization_level=optimization_level, shots = shots)
         
@@ -321,8 +327,12 @@ class circuit():
         else:
             self.reset()
         
-    def _internal_measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, shots = 1024):
+    def _internal_measure(self, backend = FakeSherbrooke(), optimization_level=2, simulator = True, shots = 1024, service = None):
         """See circuit.measure() for documentation"""
+        if service is None and simulator == False:
+            raise ValueError("If simulator is False, the service must be given")
+        if simulator == False:
+            backend = service.least_busy(operational=True, simulator=False)
 
         self.qcircuit.measure_all()
 
@@ -341,7 +351,7 @@ class circuit():
 
         self.qcircuit = QuantumCircuit(self.N)
 
-        filter = 5 # with a shot of 1000, so if P < 0.5% the measurement is removed
+        filter = 1 # with a shot of 1000, so if P < 0.1% the measurement is removed
         filtered_data = {value/shots : [index for index, char in enumerate(key[::-1]) if char == '1'] for key, value in out_with_freq.items() if value >= filter}
 
         return filtered_data

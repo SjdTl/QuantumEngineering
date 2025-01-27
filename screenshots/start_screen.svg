@@ -100,7 +100,7 @@ font-family="MS Shell Dlg 2" font-size="7.8" font-weight="400" font-style="norma
 >
 </g>
 
-<g fill="#5a9bd4" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,300,180)"
+<g fill="#4682b4" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,300,180)"
 font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
 >
 <path vector-effect="none" fill-rule="evenodd" d="M15,0 L235,0 C243.284,0 250,6.71573 250,15 L250,45 C250,53.2843 243.284,60 235,60 L15,60 C6.71573,60 0,53.2843 0,45 L0,15 C0,6.71573 6.71573,0 15,0 "/>
@@ -109,8 +109,8 @@ font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal
 <g fill="none" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,300,180)"
 font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
 >
-<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="102.5" y="38" font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
- >PLAY</text>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="50" y="38" font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
+ >PLAY (simulator)</text>
 </g>
 
 <g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
@@ -135,7 +135,7 @@ font-family="MS Shell Dlg 2" font-size="7.8" font-weight="400" font-style="norma
 >
 </g>
 
-<g fill="#4682b4" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,300,260)"
+<g fill="#5a9bd4" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,300,260)"
 font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
 >
 <path vector-effect="none" fill-rule="evenodd" d="M15,0 L235,0 C243.284,0 250,6.71573 250,15 L250,45 C250,53.2843 243.284,60 235,60 L15,60 C6.71573,60 0,53.2843 0,45 L0,15 C0,6.71573 6.71573,0 15,0 "/>
@@ -144,8 +144,8 @@ font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal
 <g fill="none" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,300,260)"
 font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
 >
-<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="60" y="38" font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
- >PLAY (DEBUG)</text>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="49.5" y="38" font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
+ >PLAY (hardware)</text>
 </g>
 
 <g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
@@ -163,6 +163,24 @@ font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal
 font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
 >
 <image x="14" y="0" width="32" height="60" preserveAspectRatio="none" xlink:href="data:image/png;base64,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" />
+</g>
+
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="MS Shell Dlg 2" font-size="7.8" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#4682b4" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,300,420)"
+font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M15,0 L235,0 C243.284,0 250,6.71573 250,15 L250,45 C250,53.2843 243.284,60 235,60 L15,60 C6.71573,60 0,53.2843 0,45 L0,15 C0,6.71573 6.71573,0 15,0 "/>
+</g>
+
+<g fill="none" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,300,420)"
+font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="96.5" y="38" font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
+ >LOGIN</text>
 </g>
 
 <g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
