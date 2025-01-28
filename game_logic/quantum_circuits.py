@@ -115,12 +115,12 @@ class circuit():
         qc.move([0], [1,2]) \\
         qc.draw()
 
-        >>> q_0: ──■───X──────
-        >>>      ┌─┴─┐ │
-        >>> q_1: ┤ H ├─┼───■──
-        >>>      └───┘ │ ┌─┴─┐
-        >>> q_2: ──────X─┤ X ├
-                         └───┘
+        >>> q_0: ─■───■───X──────
+        >>>       │ ┌─┴─┐ │
+        >>> q_1: ─X─┤ H ├─┼───■──
+        >>>         └───┘ │ ┌─┴─┐
+        >>> q_2: ─────────X─┤ X ├
+                            └───┘
         """
         if len(move_from) != 1:
             raise ValueError("move_from must be in the form [int]; a list containing one integer")
