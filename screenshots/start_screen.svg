@@ -100,7 +100,7 @@ font-family="MS Shell Dlg 2" font-size="7.8" font-weight="400" font-style="norma
 >
 </g>
 
-<g fill="#4682b4" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,300,180)"
+<g fill="#5a9bd4" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,300,180)"
 font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
 >
 <path vector-effect="none" fill-rule="evenodd" d="M15,0 L235,0 C243.284,0 250,6.71573 250,15 L250,45 C250,53.2843 243.284,60 235,60 L15,60 C6.71573,60 0,53.2843 0,45 L0,15 C0,6.71573 6.71573,0 15,0 "/>
@@ -135,7 +135,7 @@ font-family="MS Shell Dlg 2" font-size="7.8" font-weight="400" font-style="norma
 >
 </g>
 
-<g fill="#5a9bd4" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,300,260)"
+<g fill="#4682b4" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,300,260)"
 font-family="MS Shell Dlg 2" font-size="20" font-weight="400" font-style="normal" 
 >
 <path vector-effect="none" fill-rule="evenodd" d="M15,0 L235,0 C243.284,0 250,6.71573 250,15 L250,45 C250,53.2843 243.284,60 235,60 L15,60 C6.71573,60 0,53.2843 0,45 L0,15 C0,6.71573 6.71573,0 15,0 "/>
