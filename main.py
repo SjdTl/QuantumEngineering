@@ -19,6 +19,7 @@ from PyQt5.QtGui import QPainter
 # others
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import sys
 import os
 import numpy as np
@@ -27,6 +28,55 @@ from pandas import DataFrame
 import datetime
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
+
+class MplCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        plt.style.use('dark_background') 
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super().__init__(fig)
+
+class BellTestPlot(QDialog):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setStyleSheet(stylesheet)
+
+        # Create and configure the Matplotlib canvas
+        self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
+
+        # Use a layout to add widgets to the QDialog
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+
+        # Data initialization
+        self.xdata = []
+        self.ydata = []
+        self._plot_ref = None
+
+        # Initialize the plot
+        self.update_plot(0, 0)
+
+    def update_plot(self, x, y):
+        """Update the plot with new data."""
+        self.xdata.append(x)
+        self.ydata.append(y)
+        
+        if self._plot_ref is None:
+            # Create the line plot initially
+            self._plot_ref, = self.canvas.axes.plot(self.xdata, self.ydata, '-o', label="Data")
+            self.canvas.axes.set_xlabel("Number of measurements")
+            self.canvas.axes.set_ylabel("Bell violation")
+
+            self.canvas.axes.legend()
+        else:
+            # Update the existing line plot
+            self._plot_ref.set_data(self.xdata, self.ydata)
+        
+        # Adjust axes to fit the new data
+        self.canvas.axes.relim()
+        self.canvas.axes.autoscale_view()
+        self.canvas.draw()
 
 class LoadingPopup(QDialog):
     """
@@ -155,7 +205,6 @@ class MeasurePopup(QDialog):
         layout.addWidget(self.label)
         self.setLayout(layout)
 
-
 class CircuitFigure(QDialog):
     """
     Description
@@ -201,7 +250,7 @@ class CircuitFigure(QDialog):
 
 class Main(QMainWindow):
     """Main class for the game: UI and classical game logic"""
-    def __init__(self, simulation = True, debug = False):
+    def __init__(self, simulation = True, debug = False, service = None):
         """
         Description
         -----------
@@ -216,6 +265,8 @@ class Main(QMainWindow):
         """
         self.simulation = simulation
         self.debug = debug
+        self.service = service
+
 
         self.N = 32
         self.circuit = circuit(self.N)
@@ -230,8 +281,8 @@ class Main(QMainWindow):
         super().__init__()
         self.setWindowTitle("Quantum Ludo")
         self.setGeometry(250,250,600,500)
-        self.window()
         self.initUI()
+        self.window()
         self.total_turns = 0
         self.next_turn()
 
@@ -242,11 +293,16 @@ class Main(QMainWindow):
         self.file_menu = self.menu.addMenu("File")
         self.debug_menu = self.menu.addMenu("Debug")
         self.test_moves = self.menu.addMenu("Moves")
+        self.special_measure = self.menu.addMenu("Special measures")
         self.setMenuBar(self.menu)
         
         self.reset = Qt.QAction("Reset", self)
         self.reset.setShortcut("Ctrl+R")
         self.reset.triggered.connect(self.reset_app)
+
+        self.force_standard_basis_button = Qt.QAction("Set measurement basis to be dependent on pawn", self)
+        self.force_standard_basis_button.triggered.connect(lambda: self.force_standard_basis())
+        self.force_global_standard_basis = True
 
         self.screenshot = Qt.QAction("Screenshot", self)
         self.screenshot.setShortcut("f5")
@@ -258,7 +314,7 @@ class Main(QMainWindow):
 
         self.measure_button = Qt.QAction("Measure", self)
         self.measure_button.setShortcut("Ctrl+M")
-        self.measure_button.triggered.connect(self.measure_action)
+        self.measure_button.triggered.connect(lambda: self.measure_action(standard_basis=True))
 
         self.skip_turn = Qt.QAction("Skip turn", self)
         self.skip_turn.setShortcut("Ctrl+S")
@@ -281,7 +337,6 @@ class Main(QMainWindow):
 
         self.print_positions_button = Qt.QAction("Print positions", self)
         self.print_positions_button.triggered.connect(self.print_positions)
-        self.print_positions_button.setShortcut("Ctrl+Alt+P")
 
         self.print_move_options_button = Qt.QAction("Print move options", self)
         self.print_move_options_button.triggered.connect(self.print_all_options)
@@ -340,10 +395,25 @@ class Main(QMainWindow):
             button.triggered.connect(lambda _, b = finish_type: self.start_in_finish_positions(fin_type = b))
             self.finish_positions_button.addAction(button)
 
+        self.bell_test_button = Qt.QAction("Bell test", self)
+        self.bell_test_button.triggered.connect(self.bell_test)
+
+        trigger_options = [(self.colors[0],    0), (self.colors[0],    1), (self.colors[1],   0), (self.colors[1],   1), (self.colors[2],  0), (self.colors[2],  1), (self.colors[3], 0), (self.colors[3], 1)]
+        measure_buttons = [Qt.QAction(rf"{c}, pawn {p}", self) for (c, p) in trigger_options]
+        for smeasure_button, trigger_option in zip(measure_buttons, trigger_options):
+            smeasure_button.triggered.connect(lambda _, b = trigger_option: self.measure_action(trigger=b))
+            self.special_measure.addAction(smeasure_button)
+
+        self.keep_circuit_open = Qt.QAction("Keep circuit open", self)
+        self.keep_circuit_open.triggered.connect(self.keep_circuit_open_action)
+        self.execpopup_measure = False
+        self.special_measure.addAction(self.keep_circuit_open)
+
         self.file_menu.addAction(self.reset)
         self.file_menu.addAction(self.undo_button)
         self.file_menu.addAction(self.throw_dice_button)
         self.file_menu.addAction(self.screenshot)
+        self.file_menu.addAction(self.force_standard_basis_button)
         self.debug_menu.addAction(self.measure_button)
         self.debug_menu.addAction(self.skip_turn)
         self.debug_menu.addAction(self.select_dice_button)
@@ -352,6 +422,7 @@ class Main(QMainWindow):
         self.debug_menu.addAction(self.position_names_button)
         self.debug_menu.addAction(self.print_positions_button)
         self.debug_menu.addAction(self.print_move_options_button)
+        self.test_moves.addAction(self.bell_test_button)
 
     def initUI(self):
         """
@@ -382,7 +453,7 @@ class Main(QMainWindow):
         Example
         --------
         # The second red pawn is present at position 2 on the board
-        self.board_positions[2].setProperty("Color", "Red")
+        self.board_positions[2].setProperty("Color", self.colors[0])
         self.board_positions[2].setProperty("Pawn", 1)
         self.board_positions[2].setProperty("Selected", False)
         """
@@ -419,6 +490,16 @@ class Main(QMainWindow):
         # Initialize the colours and the position that they occupy after going out of the home position (after throwing a 6)
         # ---------------------------------------------------------------------------------------------------------------------
         self.colors = ['Red', 'Green', 'Blue', 'Purple'] # MUST BE FOUR COLOURS
+        self.measure_basis_dict = {
+            (self.colors[0],    0): {self.colors[0]:    "Z", self.colors[1]:  "Q", self.colors[2]:   "X", self.colors[3]: "T"},
+            (self.colors[0],    1): {self.colors[0]:    "Z", self.colors[3]: "Q", self.colors[2]:   "X", self.colors[1]:  "T"},
+            (self.colors[2],   0): {self.colors[2]:   "Z", self.colors[3]: "Q", self.colors[0]:    "X", self.colors[1]:  "T"},
+            (self.colors[2],   1): {self.colors[2]:   "Z", self.colors[1]:  "Q", self.colors[0]:    "X", self.colors[3]: "T"},
+            (self.colors[1],  0): {self.colors[1]:  "Z", self.colors[0]:    "Q", self.colors[3]: "X", self.colors[2]:   "T"},
+            (self.colors[1],  1): {self.colors[1]:  "Z", self.colors[2]:   "Q", self.colors[3]: "X", self.colors[0]:    "T"},
+            (self.colors[3], 0): {self.colors[3]: "Z", self.colors[2]:   "Q", self.colors[1]:  "X", self.colors[0]:    "T"},
+            (self.colors[3], 1): {self.colors[3]: "Z", self.colors[0]:    "Q", self.colors[1]:  "X", self.colors[2]:   "T"}
+        }
         self.current_turn = self.colors[-1]
         self.start_position = {
             self.colors[0] : 26,
@@ -507,7 +588,7 @@ class Main(QMainWindow):
         self.update_stylesheets(deselect=True)
         occupied_positions_count = sum(1 for pos in self.board_positions if pos.property("Color") is not None)
         if occupied_positions_count >= 20:
-            QTimer.singleShot(500, lambda : self.measure_action(next_turn=False))
+            QTimer.singleShot(500, lambda : self.measure_action(next_turn=False, standard_basis=True))
             return  # Exit the method after measuring
         self.save()
 
@@ -688,16 +769,17 @@ class Main(QMainWindow):
         
         if captives:
             self.circuit.capture(capture_move, captives, captive_entanglement[0])
-        if move_to[0] < 32:
-            if to_next_turn:
+        if to_next_turn:
+            if move_to[0] < 32:
                 self.next_turn()
-        else:
-            self.update_stylesheets(deselect=True)
-            QTimer.singleShot(500, lambda : self.measure_action(final_position = final_pos))
+            else:
+                self.update_stylesheets(deselect=True)
+                self.measure_action(final_position = final_pos)
 
     def move(self, move_from, to_next_turn = True):
         """Move a pawn from one position to two others (in a superposition) and potentially capture another or two other pawns"""
         move_to = [(move_from + self.die_throws[0]) % 32, (move_from + self.die_throws[1]) % 32]
+        move_to.sort()
         captives = [pos for pos in move_to if self.board_positions[pos].property("Color") != None]
         normal_move = [pos for pos in move_to if self.board_positions[pos].property("Color") is None]
         captive_entanglement = [[i for i in range(0,32)
@@ -751,12 +833,12 @@ class Main(QMainWindow):
             self.board_positions[move_from].setProperty(prop, None)
             
 
-        if nr_of_final_positions == 0:
-            if to_next_turn:
+        if to_next_turn:
+            if nr_of_final_positions == 0:
                 self.next_turn()
-        else:
-            self.update_stylesheets(deselect=True)
-            QTimer.singleShot(500, lambda : self.measure_action(final_position = final_pos))
+            else:
+                self.update_stylesheets(deselect=True)
+                self.measure_action(final_position = final_pos)
 
     def new_pawn(self, move_from, optional_move_to = None, to_next_turn = True):
         """Move a pawn from the home position to the board and potentially capture another pawn"""
@@ -779,52 +861,131 @@ class Main(QMainWindow):
         if to_next_turn:
             self.next_turn()
 
-    def measure_action(self, final_position = None, next_turn = True):
+    def measure_action(self, final_position = None, next_turn = True, trigger = None, standard_basis = False, bell_test = False):
         """Measure the circuit and update the board accordingly"""
+        # Add debug flag to force duplicate pawns
+        force_duplicate = False  # For testing duplicate pawn removal
+        
+        if (trigger != None and self.force_global_standard_basis == True) or self.force_global_standard_basis == False:
+            if standard_basis == False:
+                if trigger == None:
+                    trigger = (self.current_turn, final_position % 2)
+                measure_basis = [self.measure_basis_dict[trigger][pos.property("Color")]
+                                if pos.property("Color") is not None else None
+                                for pos in self.board_positions]
+                # measure basis of pawn that finished
+                if final_position is not None:
+                    # Append same thing twice
+                    measure_basis.append([self.measure_basis_dict[trigger][self.current_turn]] * 2)
+                else:
+                    measure_basis.append([None, None])
+                self.circuit.measure_basis(measure_basis)
+
+
         # -------
         # Measure
         # -------
-        measure_popup = MeasurePopup()
-        measure_popup.show()
-        positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True)
-        print(nr_of_qubits_used)
-        print(out_with_freq)
-        print(positions)
+        if bell_test == False:
+            self.update_drawn_circuit()
+            measure_popup = MeasurePopup()
+            
+            measure_popup.show()
+        positions, out_with_freq, nr_of_qubits_used = self.circuit.measure(out_internal_measure=True, efficient = True, simulator = self.simulation, service = self.service)
+        
+        # Force a duplicate pawn for testing
+        if force_duplicate and len(positions) > 0:
+            # Add a duplicate pawn at position + 1
+            for pos in positions[:]:  # Use slice to avoid modifying while iterating
+                if pos < len(self.board_positions) - 1:  # Ensure we don't go out of bounds
+                    positions.append((pos + 1) % 32)
+                    print(f"DEBUG: Forced duplicate pawn at position {(pos + 1) % 32}")
+
+        if bell_test == False:
+            print(nr_of_qubits_used)
+            print(out_with_freq)
+            print(positions)
+
+        if self.execpopup_measure:
+            self.circuitfigure.exec_()
 
         # ---------------------------------
         # Remove pawns that no longer exist
         # ---------------------------------
-        for pos in range(0,len(self.board_positions)):
-            if pos not in positions:
-                for prop in ["Color", "Pawn"]:
-                    self.board_positions[pos].setProperty(prop, None)
-        if final_position != None:
-            if not(32 in positions or 33 in positions):
-                self.final_positions[final_position].setProperty("Color", None)
-                self.final_positions[final_position].setProperty("Pawn", None)
+        if bell_test == False:
+            for pos in range(0,len(self.board_positions)):
+                if pos not in positions:
+                    for prop in ["Color", "Pawn"]:
+                        self.board_positions[pos].setProperty(prop, None)
+            if final_position != None:
+                if not(32 in positions or 33 in positions):
+                    self.final_positions[final_position].setProperty("Color", None)
+                    self.final_positions[final_position].setProperty("Pawn", None)
 
-        # -------------------------------------------------------------------
-        # Check if a pawn was captured and put it back into its home position
-        # -------------------------------------------------------------------
-        pawns = [[pos.property("Color"), pos.property("Pawn")] for pos in self.board_positions + self.final_positions
-                if pos.property("Color") != None]
-        all_pawns = [[color, i] for i in [0,1] for color in self.colors]
-        pawns_at_spawn = [pawn for pawn in all_pawns if pawn not in pawns]
+            # If pawn appears in winning position, remove it from other positions
+            if final_position is not None and (32 in positions or 33 in positions):
+                pawn_num = final_position % 2
+                for pos in range(len(self.board_positions)):
+                    if (pos in positions and 
+                        self.board_positions[pos].property("Color") == self.current_turn and
+                        self.board_positions[pos].property("Pawn") == pawn_num):
+                        print(f"Removing {self.current_turn} pawn {pawn_num} from position {pos} as it reached winning position")
+                        self.board_positions[pos].setProperty("Color", None)
+                        self.board_positions[pos].setProperty("Pawn", None)
 
-        pos = self.home_positions
-        if [self.colors[0], 0] in pawns_at_spawn: pos[0].setProperty("Pawn", 0), pos[0].setProperty("Color", self.colors[0])
-        if [self.colors[0], 1] in pawns_at_spawn: pos[1].setProperty("Pawn", 1), pos[1].setProperty("Color", self.colors[0])
-        if [self.colors[1], 0] in pawns_at_spawn: pos[2].setProperty("Pawn", 0), pos[2].setProperty("Color", self.colors[1])
-        if [self.colors[1], 1] in pawns_at_spawn: pos[3].setProperty("Pawn", 1), pos[3].setProperty("Color", self.colors[1])
-        if [self.colors[2], 0] in pawns_at_spawn: pos[4].setProperty("Pawn", 0), pos[4].setProperty("Color", self.colors[2])
-        if [self.colors[2], 1] in pawns_at_spawn: pos[5].setProperty("Pawn", 1), pos[5].setProperty("Color", self.colors[2])
-        if [self.colors[3], 0] in pawns_at_spawn: pos[6].setProperty("Pawn", 0), pos[6].setProperty("Color", self.colors[3])
-        if [self.colors[3], 1] in pawns_at_spawn: pos[7].setProperty("Pawn", 1), pos[7].setProperty("Color", self.colors[3])
+            # Remove duplicate pawns keeping only the furthest one
+            for color in self.colors:
+                for pawn in [0, 1]:
+                    # Find all positions for this color/pawn combination
+                    pawn_positions = []
+                    for pos in range(len(self.board_positions)):
+                        if (pos in positions and 
+                            self.board_positions[pos].property("Color") == color and 
+                            self.board_positions[pos].property("Pawn") == pawn):
+                            pawn_positions.append(pos)
+                    
+                    # If there are duplicates, keep only the furthest one
+                    if len(pawn_positions) > 1:
+                        start_pos = self.start_position[color]
+                        furthest_pos = max(pawn_positions, key=lambda x: (x - start_pos) % 32)
+                        
+                        # Remove all but the furthest position
+                        for pos in pawn_positions:
+                            if pos != furthest_pos:
+                                print(f"Removing duplicate {color} pawn {pawn} at position {pos}, keeping position {furthest_pos}")
+                                self.board_positions[pos].setProperty("Color", None)
+            
+                                self.board_positions[pos].setProperty("Pawn", None)
 
-        measure_popup.close()
+            # -------------------------------------------------------------------
+            # Check if a pawn was captured and put it back into its home position
+            # -------------------------------------------------------------------
+            pawns = [[pos.property("Color"), pos.property("Pawn")] for pos in self.board_positions + self.final_positions
+                    if pos.property("Color") != None]
+            all_pawns = [[color, i] for i in [0,1] for color in self.colors]
+            pawns_at_spawn = [pawn for pawn in all_pawns if pawn not in pawns]
+
+
+            pos = self.home_positions
+            if [self.colors[0], 0] in pawns_at_spawn: pos[0].setProperty("Pawn", 0), pos[0].setProperty("Color", self.colors[0])
+            if [self.colors[0], 1] in pawns_at_spawn: pos[1].setProperty("Pawn", 1), pos[1].setProperty("Color", self.colors[0])
+            if [self.colors[1], 0] in pawns_at_spawn: pos[2].setProperty("Pawn", 0), pos[2].setProperty("Color", self.colors[1])
+            if [self.colors[1], 1] in pawns_at_spawn: pos[3].setProperty("Pawn", 1), pos[3].setProperty("Color", self.colors[1])
+            if [self.colors[2], 0] in pawns_at_spawn: pos[4].setProperty("Pawn", 0), pos[4].setProperty("Color", self.colors[2])
+            if [self.colors[2], 1] in pawns_at_spawn: pos[5].setProperty("Pawn", 1), pos[5].setProperty("Color", self.colors[2])
+            if [self.colors[3], 0] in pawns_at_spawn: pos[6].setProperty("Pawn", 0), pos[6].setProperty("Color", self.colors[3])
+            if [self.colors[3], 1] in pawns_at_spawn: pos[7].setProperty("Pawn", 1), pos[7].setProperty("Color", self.colors[3])
+
+            measure_popup.close()
+
+        new_positions = [p for p in range(len(self.board_positions)) if self.board_positions[p].property("Color") is not None]
+        self.circuit._reset()
+        self.circuit.new_pawn(new_positions)
+
         self.progress_bar.setValue(0)
         if self.win() == False or next_turn == False:
             self.next_turn()
+        if bell_test == True:
+            return positions
 
     def win(self):
         """Check if a player has won the game. If so, show WinPopup() and reset the game"""
@@ -938,6 +1099,23 @@ class Main(QMainWindow):
         for positions in [self.home_positions, self.board_positions, self.final_positions]:
                 for i, pos in enumerate(positions):
                     pos.setText(rf'{str(i) if show==True else ""}')
+
+    def keep_circuit_open_action(self):
+        """Wait for the user to close the measure popup when measuring such that the circuit can be view"""
+        if self.keep_circuit_open.text() == "Keep circuit open":
+            self.keep_circuit_open.setText("Close circuit")
+            self.execpopup_measure = True
+        else:
+            self.keep_circuit_open.setText("Keep circuit open")
+            self.execpopup_measure = False
+
+    def force_standard_basis(self, force_dependency = False):
+        if self.force_standard_basis_button.text() == "Set measurement basis to be dependent on pawn" or force_dependency == True:
+            self.force_standard_basis_button.setText("Force all measurement in standard basis")
+            self.force_global_standard_basis = False
+        else:
+            self.force_standard_basis_button.setText("Set measurement basis to be dependent on pawn")
+            self.force_global_standard_basis = True
 
     def reset_app(self, next_turn = True):
         """Reset the game to the initial state. This is similar to starting a new game, except that the history is not cleared (e.g. ctrl+z still works)"""
@@ -1223,6 +1401,145 @@ class Main(QMainWindow):
         self.save()
         self.game_logic()
 
+    def bell_test(self):
+        self.reset_app()
+        self.current_turn = self.colors[0]
+        self.new_pawn(0,20)
+        self.current_turn = self.colors[1]
+        self.new_pawn(2,19)
+        self.new_pawn(3,23) 
+        self.current_turn = self.colors[2]
+        self.new_pawn(5,9)
+        self.new_pawn(4,8)
+        self.current_turn = self.colors[0]
+        self.new_pawn(1,25)
+
+        self.update_drawn_circuit()
+        self.update_stylesheets(deselect=True)
+
+        self.die_throws = [1,3]
+        self.move(20, False)
+        QTimer.singleShot(1000, lambda : self.update_drawn_circuit())
+        QTimer.singleShot(1000, lambda : self.update_stylesheets())
+        self.current_turn = self.colors[2]
+        self.die_throws = [2,2]
+        QTimer.singleShot(1500, lambda : self.direct_move(19,False))
+        QTimer.singleShot(2500, lambda : self.update_drawn_circuit())
+        QTimer.singleShot(2500, lambda : self.update_stylesheets())
+
+        if "Set measurement basis to be dependent on pawn":
+            self.force_standard_basis()
+        QTimer.singleShot(3000, lambda : self._bell_test_internals())
+    
+    def _bell_test_internals(self):
+        def initialize():
+            self.reset_app()
+            self.current_turn = self.colors[0]
+            self.new_pawn(0,20)
+            self.current_turn = self.colors[1]
+            self.new_pawn(2,19)
+            self.new_pawn(3,23) 
+            self.current_turn = self.colors[2]
+            self.new_pawn(5,9)
+            self.new_pawn(4,8)
+            self.current_turn = self.colors[0]
+            self.new_pawn(1,25)
+
+            self.die_throws = [1,3]
+            self.move(20, False)
+            self.current_turn = self.colors[2]
+            self.die_throws = [2,2]
+            self.direct_move(19,False)
+            self.update_drawn_circuit()
+            self.update_stylesheets(deselect=True)
+        def blue_zero_finish():
+            self.current_turn = self.colors[2]
+            self.die_throws = [2,2]
+            self.direct_move(8,False)
+            positions = self.measure_action(final_position=4, next_turn=False, bell_test=True)
+            if (24 in positions and 23 in positions) or (24 not in positions and 23 not in positions):
+                outcomes["XQ"]["total"] += 1
+            else:
+                outcomes["XQ"]["total"] += -1
+            outcomes["XQ"]["amount"] += 1
+
+        def blue_one_finish():
+            self.current_turn = self.colors[2]
+            self.die_throws = [2,2]
+            self.direct_move(9,False)
+            positions = self.measure_action(final_position=5, next_turn=False, bell_test=True)
+
+            if (24 in positions and 23 in positions) or (24 not in positions and 23 not in positions):
+                outcomes["XT"]["total"] += 1
+            else:
+                outcomes["XT"]["total"] += -1
+            outcomes["XT"]["amount"] += 1
+        def red_one_finish():
+            self.current_turn = self.colors[0]
+            self.die_throws = [1,1]
+            self.direct_move(25,False)
+            positions = self.measure_action(final_position=1, next_turn=False, bell_test=True)
+
+            if (24 in positions and 23 in positions) or (24 not in positions and 23 not in positions):
+                outcomes["ZT"]["total"] += 1
+            else:
+                outcomes["ZT"]["total"] += -1
+            outcomes["ZT"]["amount"] += 1
+            
+        def red_zero_finish():
+            self.current_turn = self.colors[0]
+            self.die_throws = [2,2]
+            self.direct_move(24,False)
+            positions = self.measure_action(final_position=0, next_turn=False, bell_test=True)
+
+            if (23 in positions and 32 in positions) or (23 not in positions and 32 not in positions):
+                outcomes["ZQ"]["total"] += 1
+            else:
+                outcomes["ZQ"]["total"] += -1
+            outcomes["ZQ"]["amount"] += 1
+
+        finish_options = [blue_zero_finish, blue_one_finish, red_one_finish, red_zero_finish]
+        # randomly select one
+        outcomes = {"ZT": {"amount" : 0, "total" : 0}, # Z, T - red 1
+                    "ZQ": {"amount" : 0, "total" : 0}, # Z, Q - red 0
+                    "XT": {"amount" : 0, "total" : 0}, # X, T - blue 1
+                    "XQ": {"amount" : 0, "total" : 0}} # X, Q - blue 0
+        bell_test_figure = BellTestPlot()
+        bell_test_figure.show()
+        
+        Ss = []
+        for i in range(1,1000):
+            finish_options[np.random.randint(0,4)]()
+            S = 0
+            print(outcomes)
+
+            # Check each value individually and only divide if non-zero
+            if outcomes["ZT"]["amount"] != 0:
+                S += outcomes["ZT"]["total"] / outcomes["ZT"]["amount"]
+            else:
+                S += 0
+
+            if outcomes["XQ"]["amount"] != 0:
+                S += outcomes["XQ"]['total'] / outcomes["XQ"]['amount']
+            else:
+                S += 0
+
+            if outcomes["XT"]["amount"] != 0:
+                S += outcomes["XT"]['total'] / outcomes["XT"]['amount']
+            else:
+                S += 0
+
+            if outcomes["ZQ"]["amount"] != 0:
+                S -= outcomes["ZQ"]['total'] / outcomes["ZQ"]['amount']
+            else:
+                S -= 0
+            print(S)
+            Ss.append(S)
+            bell_test_figure.update_plot(y=S, x=i)
+            plt.pause(0.1)
+            initialize()
+            if i % 100 == 0 or i == 1:
+                open(os.path.join(dir_path, "game_logic", "Cache", "bell_test_results.txt"), "w").write(str(Ss))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
