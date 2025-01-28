@@ -881,12 +881,12 @@ class Main(QMainWindow):
                     measure_basis.append([None, None])
                 self.circuit.measure_basis(measure_basis)
 
-        self.update_drawn_circuit()
 
         # -------
         # Measure
         # -------
         if bell_test == False:
+            self.update_drawn_circuit()
             measure_popup = MeasurePopup()
             
             measure_popup.show()
@@ -911,27 +911,27 @@ class Main(QMainWindow):
         # ---------------------------------
         # Remove pawns that no longer exist
         # ---------------------------------
-        for pos in range(0,len(self.board_positions)):
-            if pos not in positions:
-                for prop in ["Color", "Pawn"]:
-                    self.board_positions[pos].setProperty(prop, None)
-        if final_position != None:
-            if not(32 in positions or 33 in positions):
-                self.final_positions[final_position].setProperty("Color", None)
-                self.final_positions[final_position].setProperty("Pawn", None)
+        if bell_test == False:
+            for pos in range(0,len(self.board_positions)):
+                if pos not in positions:
+                    for prop in ["Color", "Pawn"]:
+                        self.board_positions[pos].setProperty(prop, None)
+            if final_position != None:
+                if not(32 in positions or 33 in positions):
+                    self.final_positions[final_position].setProperty("Color", None)
+                    self.final_positions[final_position].setProperty("Pawn", None)
 
-        # If pawn appears in winning position, remove it from other positions
-        if final_position is not None and (32 in positions or 33 in positions):
-            pawn_num = final_position % 2
-            for pos in range(len(self.board_positions)):
-                if (pos in positions and 
-                    self.board_positions[pos].property("Color") == self.current_turn and
-                    self.board_positions[pos].property("Pawn") == pawn_num):
-                    print(f"Removing {self.current_turn} pawn {pawn_num} from position {pos} as it reached winning position")
-                    self.board_positions[pos].setProperty("Color", None)
-                    self.board_positions[pos].setProperty("Pawn", None)
+            # If pawn appears in winning position, remove it from other positions
+            if final_position is not None and (32 in positions or 33 in positions):
+                pawn_num = final_position % 2
+                for pos in range(len(self.board_positions)):
+                    if (pos in positions and 
+                        self.board_positions[pos].property("Color") == self.current_turn and
+                        self.board_positions[pos].property("Pawn") == pawn_num):
+                        print(f"Removing {self.current_turn} pawn {pawn_num} from position {pos} as it reached winning position")
+                        self.board_positions[pos].setProperty("Color", None)
+                        self.board_positions[pos].setProperty("Pawn", None)
 
-        if bell_test==False:
             # Remove duplicate pawns keeping only the furthest one
             for color in self.colors:
                 for pawn in [0, 1]:
@@ -956,27 +956,31 @@ class Main(QMainWindow):
             
                                 self.board_positions[pos].setProperty("Pawn", None)
 
-        # -------------------------------------------------------------------
-        # Check if a pawn was captured and put it back into its home position
-        # -------------------------------------------------------------------
-        pawns = [[pos.property("Color"), pos.property("Pawn")] for pos in self.board_positions + self.final_positions
-                if pos.property("Color") != None]
-        all_pawns = [[color, i] for i in [0,1] for color in self.colors]
-        pawns_at_spawn = [pawn for pawn in all_pawns if pawn not in pawns]
+            # -------------------------------------------------------------------
+            # Check if a pawn was captured and put it back into its home position
+            # -------------------------------------------------------------------
+            pawns = [[pos.property("Color"), pos.property("Pawn")] for pos in self.board_positions + self.final_positions
+                    if pos.property("Color") != None]
+            all_pawns = [[color, i] for i in [0,1] for color in self.colors]
+            pawns_at_spawn = [pawn for pawn in all_pawns if pawn not in pawns]
 
 
-        pos = self.home_positions
-        if [self.colors[0], 0] in pawns_at_spawn: pos[0].setProperty("Pawn", 0), pos[0].setProperty("Color", self.colors[0])
-        if [self.colors[0], 1] in pawns_at_spawn: pos[1].setProperty("Pawn", 1), pos[1].setProperty("Color", self.colors[0])
-        if [self.colors[1], 0] in pawns_at_spawn: pos[2].setProperty("Pawn", 0), pos[2].setProperty("Color", self.colors[1])
-        if [self.colors[1], 1] in pawns_at_spawn: pos[3].setProperty("Pawn", 1), pos[3].setProperty("Color", self.colors[1])
-        if [self.colors[2], 0] in pawns_at_spawn: pos[4].setProperty("Pawn", 0), pos[4].setProperty("Color", self.colors[2])
-        if [self.colors[2], 1] in pawns_at_spawn: pos[5].setProperty("Pawn", 1), pos[5].setProperty("Color", self.colors[2])
-        if [self.colors[3], 0] in pawns_at_spawn: pos[6].setProperty("Pawn", 0), pos[6].setProperty("Color", self.colors[3])
-        if [self.colors[3], 1] in pawns_at_spawn: pos[7].setProperty("Pawn", 1), pos[7].setProperty("Color", self.colors[3])
+            pos = self.home_positions
+            if [self.colors[0], 0] in pawns_at_spawn: pos[0].setProperty("Pawn", 0), pos[0].setProperty("Color", self.colors[0])
+            if [self.colors[0], 1] in pawns_at_spawn: pos[1].setProperty("Pawn", 1), pos[1].setProperty("Color", self.colors[0])
+            if [self.colors[1], 0] in pawns_at_spawn: pos[2].setProperty("Pawn", 0), pos[2].setProperty("Color", self.colors[1])
+            if [self.colors[1], 1] in pawns_at_spawn: pos[3].setProperty("Pawn", 1), pos[3].setProperty("Color", self.colors[1])
+            if [self.colors[2], 0] in pawns_at_spawn: pos[4].setProperty("Pawn", 0), pos[4].setProperty("Color", self.colors[2])
+            if [self.colors[2], 1] in pawns_at_spawn: pos[5].setProperty("Pawn", 1), pos[5].setProperty("Color", self.colors[2])
+            if [self.colors[3], 0] in pawns_at_spawn: pos[6].setProperty("Pawn", 0), pos[6].setProperty("Color", self.colors[3])
+            if [self.colors[3], 1] in pawns_at_spawn: pos[7].setProperty("Pawn", 1), pos[7].setProperty("Color", self.colors[3])
 
-        if bell_test == False:
             measure_popup.close()
+
+        new_positions = [p for p in range(len(self.board_positions)) if self.board_positions[p].property("Color") is not None]
+        self.circuit._reset()
+        self.circuit.new_pawn(new_positions)
+
         self.progress_bar.setValue(0)
         if self.win() == False or next_turn == False:
             self.next_turn()
@@ -1453,11 +1457,11 @@ class Main(QMainWindow):
             self.die_throws = [2,2]
             self.direct_move(8,False)
             positions = self.measure_action(final_position=4, next_turn=False, bell_test=True)
-            if (24 in positions and 25 in positions) or (24 not in positions and 25 not in positions):
-                outcomes["A2B2"]["total"] += 1
+            if (24 in positions and 23 in positions) or (24 not in positions and 23 not in positions):
+                outcomes["XQ"]["total"] += 1
             else:
-                outcomes["A2B2"]["total"] += -1
-            outcomes["A2B2"]["amount"] += 1
+                outcomes["XQ"]["total"] += -1
+            outcomes["XQ"]["amount"] += 1
 
         def blue_one_finish():
             self.current_turn = self.colors[2]
@@ -1465,22 +1469,22 @@ class Main(QMainWindow):
             self.direct_move(9,False)
             positions = self.measure_action(final_position=5, next_turn=False, bell_test=True)
 
-            if (24 in positions and 25 in positions) or (24 not in positions and 25 not in positions):
-                outcomes["A2B1"]["total"] += 1
+            if (24 in positions and 23 in positions) or (24 not in positions and 23 not in positions):
+                outcomes["XT"]["total"] += 1
             else:
-                outcomes["A2B1"]["total"] += -1
-            outcomes["A2B1"]["amount"] += 1
+                outcomes["XT"]["total"] += -1
+            outcomes["XT"]["amount"] += 1
         def red_one_finish():
             self.current_turn = self.colors[0]
             self.die_throws = [1,1]
             self.direct_move(25,False)
             positions = self.measure_action(final_position=1, next_turn=False, bell_test=True)
 
-            if (24 in positions and 25 in positions) or (24 not in positions and 25 not in positions):
-                outcomes["A1B1"]["total"] += 1
+            if (24 in positions and 23 in positions) or (24 not in positions and 23 not in positions):
+                outcomes["ZT"]["total"] += 1
             else:
-                outcomes["A1B1"]["total"] += -1
-            outcomes["A1B1"]["amount"] += 1
+                outcomes["ZT"]["total"] += -1
+            outcomes["ZT"]["amount"] += 1
             
         def red_zero_finish():
             self.current_turn = self.colors[0]
@@ -1488,50 +1492,54 @@ class Main(QMainWindow):
             self.direct_move(24,False)
             positions = self.measure_action(final_position=0, next_turn=False, bell_test=True)
 
-            if (24 in positions and 25 in positions) or (24 not in positions and 25 not in positions):
-                outcomes["A1B2"]["total"] += 1
+            if (23 in positions and 32 in positions) or (23 not in positions and 32 not in positions):
+                outcomes["ZQ"]["total"] += 1
             else:
-                outcomes["A1B2"]["total"] += -1
-            outcomes["A1B2"]["amount"] += 1
+                outcomes["ZQ"]["total"] += -1
+            outcomes["ZQ"]["amount"] += 1
 
         finish_options = [blue_zero_finish, blue_one_finish, red_one_finish, red_zero_finish]
         # randomly select one
-        outcomes = {"A1B1": {"amount" : 0, "total" : 0}, # Z, T - red 1
-                    "A1B2": {"amount" : 0, "total" : 0}, # Z, R - red 0
-                    "A2B1": {"amount" : 0, "total" : 0}, # X, T - blue 1
-                    "A2B2": {"amount" : 0, "total" : 0}} # X, R - blue 0
+        outcomes = {"ZT": {"amount" : 0, "total" : 0}, # Z, T - red 1
+                    "ZQ": {"amount" : 0, "total" : 0}, # Z, Q - red 0
+                    "XT": {"amount" : 0, "total" : 0}, # X, T - blue 1
+                    "XQ": {"amount" : 0, "total" : 0}} # X, Q - blue 0
         bell_test_figure = BellTestPlot()
         bell_test_figure.show()
         
-
-        for i in range(1,50):
+        Ss = []
+        for i in range(1,1000):
             finish_options[np.random.randint(0,4)]()
             S = 0
+            print(outcomes)
 
             # Check each value individually and only divide if non-zero
-            if outcomes["A1B1"]["amount"] != 0:
-                S += outcomes["A1B1"]["total"] / outcomes["A1B1"]["amount"]
+            if outcomes["ZT"]["amount"] != 0:
+                S += outcomes["ZT"]["total"] / outcomes["ZT"]["amount"]
             else:
                 S += 0
 
-            if outcomes["A2B2"]["amount"] != 0:
-                S += outcomes["A2B2"]['total'] / outcomes["A2B2"]['amount']
+            if outcomes["XQ"]["amount"] != 0:
+                S += outcomes["XQ"]['total'] / outcomes["XQ"]['amount']
             else:
                 S += 0
 
-            if outcomes["A2B1"]["amount"] != 0:
-                S += outcomes["A2B1"]['total'] / outcomes["A2B1"]['amount']
+            if outcomes["XT"]["amount"] != 0:
+                S += outcomes["XT"]['total'] / outcomes["XT"]['amount']
             else:
                 S += 0
 
-            if outcomes["A1B2"]["amount"] != 0:
-                S -= outcomes["A1B2"]['total'] / outcomes["A1B2"]['amount']
+            if outcomes["ZQ"]["amount"] != 0:
+                S -= outcomes["ZQ"]['total'] / outcomes["ZQ"]['amount']
             else:
                 S -= 0
             print(S)
+            Ss.append(S)
             bell_test_figure.update_plot(y=S, x=i)
             plt.pause(0.1)
             initialize()
+            if i % 100 == 0 or i == 1:
+                open(os.path.join(dir_path, "game_logic", "Cache", "bell_test_results.txt"), "w").write(str(Ss))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
