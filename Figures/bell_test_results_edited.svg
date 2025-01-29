@@ -5,7 +5,7 @@
    viewBox="0 0 624.766072 328.683293"
    version="1.1"
    id="svg205"
-   sodipodi:docname="bell_test_results.svg.2025_01_28_10_49_16.1.svg"
+   sodipodi:docname="bell_test_results_edited.svg"
    inkscape:version="1.4 (86a8ad7, 2024-10-11)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -26,8 +26,8 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="pt"
      inkscape:zoom="1.323069"
-     inkscape:cx="1065.7041"
-     inkscape:cy="168.54752"
+     inkscape:cx="523.02639"
+     inkscape:cy="229.013"
      inkscape:window-width="1920"
      inkscape:window-height="991"
      inkscape:window-x="-9"
@@ -68,21 +68,11 @@
   <g
      id="figure_1">
     <g
-       id="patch_1">
-      <path
-         d="M 0 328.683293  L 624.766072 328.683293  L 624.766072 0  L 0 0  z "
-         style="fill: #ffffff"
-         id="path1" />
-    </g>
+       id="patch_1" />
     <g
        id="axes_1">
       <g
-         id="patch_2">
-        <path
-           d="M 46.075966 297.607327  L 551.663402 297.607327  L 551.663402 20.407327  L 46.075966 20.407327  z "
-           style="fill: #ffffff"
-           id="path2" />
-      </g>
+         id="patch_2" />
       <g
          id="matplotlib.axis_1">
         <g
@@ -1547,13 +1537,6 @@
     </g>
     <g
        id="axes_2">
-      <g
-         id="patch_5">
-        <path
-           d="M 602.390675 297.607327  L 604.075966 297.607327  L 604.075966 20.407327  L 602.390675 20.407327  z "
-           style="fill: #ffffff"
-           id="path118" />
-      </g>
       <g
          id="matplotlib.axis_3">
         <g

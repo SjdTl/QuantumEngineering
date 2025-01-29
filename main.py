@@ -280,11 +280,19 @@ class Main(QMainWindow):
 
         super().__init__()
         self.setWindowTitle("Quantum Ludo")
-        self.setGeometry(250,250,600,500)
+        self.L = int(500)
+        self.setGeometry(250,250,int(1.2 * self.L),self.L)
         self.initUI()
         self.window()
         self.total_turns = 0
         self.next_turn()
+
+    def resizeEvent(self, event):
+        # Update the button size based on the window size
+        self.L = self.width()   # Scale based on window size
+        for b in self.board_positions + self.final_positions + self.home_positions + self.dice:
+            b.setFixedSize(self.L// 10, self.L// 10)  # Resize button proportionally
+        self.update_stylesheets()
 
     def window(self):
         """Creates the top left menu bar containg some file options (undo, screenshot, reset), debug options (measure, selecting dice, autoplay) and some standard moves for testing"""
@@ -471,7 +479,7 @@ class Main(QMainWindow):
         x=3
         y=0
         for i, pos in enumerate(self.board_positions):
-            pos.setFixedSize(50, 50)
+            pos.setFixedSize(int(self.L/10), int(self.L/10))
             pos.setProperty("Color", None)
             pos.setProperty("Pawn", None)
             pos.setProperty("Selected", False)
@@ -514,7 +522,7 @@ class Main(QMainWindow):
         self.home_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(8)]
         for i, pos in enumerate(self.home_positions):
             current_color = self.colors[int(np.floor(i/2))]
-            pos.setFixedSize(50,50)
+            pos.setFixedSize(int(self.L/10),int(self.L/10))
             # pos.setStyleSheet(button_stylesheet(color = current_color))
             pos.setProperty("Color", current_color)
             pos.setProperty("Selected", False)
@@ -535,7 +543,7 @@ class Main(QMainWindow):
         self.final_positions = [Qt.QPushButton(rf'{i if self.debug==True else ""}') for i in range(8)]
         for i, pos in enumerate(self.final_positions):
             current_color = self.colors[int(np.floor(i/2))]
-            pos.setFixedSize(50,50)
+            pos.setFixedSize(int(self.L/10),int(self.L/10))
             # pos.setStyleSheet(button_stylesheet(border_color = current_color))
             pos.setProperty("Color", None)
             pos.setProperty("Pawn", None)
@@ -557,8 +565,8 @@ class Main(QMainWindow):
         self.dice = [Qt.QPushButton() for _ in range(number_of_dice)]
         for i, die in enumerate(self.dice):
             die.setIcon(die_cons[0])
-            die.setIconSize(QSize(45, 45))
-            die.setFixedSize(50, 50)
+            die.setIconSize(QSize(int(self.L/11), int(self.L/11)))
+            die.setFixedSize(int(self.L/10), int(self.L/10))
             die.setStyleSheet(die_stylesheet())
             grid.addWidget(die, 9, i)
 
@@ -625,7 +633,7 @@ class Main(QMainWindow):
 
         for i, die in enumerate(self.dice):
             die.setIcon(die_cons[self.die_throws[i]])
-            die.setIconSize(QSize(45,45))
+            die.setIconSize(QSize(int(self.L/11),int(self.L/11)))
 
         for button in self.dice:
             button.clicked.disconnect(self.throw_dice)
@@ -1027,7 +1035,7 @@ class Main(QMainWindow):
                     pass
                 pos.setProperty('Selected', False)
             select = pos.property('Selected')
-            button_stylesheet(pos, color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))] if pos_color == None else 'White', selected =select)
+            button_stylesheet(pos, color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))] if pos_color == None else 'White', selected =select, L = self.L/10)
         for pos in self.board_positions:
             pos_color = pos.property('Color')
             pos_pawn = pos.property('Pawn')
@@ -1040,11 +1048,11 @@ class Main(QMainWindow):
             select = pos.property("Selected")
             classical = len([pos for pos in (self.board_positions) if 
                              pos_pawn == pos.property("Pawn") and pos_color == pos.property("Color")]) == 1
-            button_stylesheet(pos, color = pos_color, pawn = pos_pawn, selected=select, classical = classical)
+            button_stylesheet(pos, color = pos_color, pawn = pos_pawn, selected=select, classical = classical, L = self.L/10)
         for i, pos in enumerate(self.final_positions):
             pos_color = pos.property('Color')
             pos_pawn = pos.property("Pawn")
-            button_stylesheet(pos, color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))])
+            button_stylesheet(pos, color = pos_color, pawn=pos_pawn, border_color=self.colors[int(np.floor(i/2))], L = self.L/10)
 
     def update_drawn_circuit(self):
         self.fig = self.circuit.draw(mpl_open = False, term_draw = False, show_idle_wires=False)

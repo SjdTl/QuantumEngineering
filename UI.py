@@ -34,7 +34,7 @@ stylesheet  ="""
             QLabel, QLineEdit { margin : 0px; padding: 0px; } /* specifies margin and padding around text in pop-ups */
             """
 
-def button_stylesheet(button, color="transparent", border_color='white', selected = False, pawn = 0, classical = True):
+def button_stylesheet(button, color="transparent", border_color='white', selected = False, pawn = 0, classical = True, L = 25):
         """
         Description
         ----------- 
@@ -71,12 +71,12 @@ def button_stylesheet(button, color="transparent", border_color='white', selecte
                     "transparent" : "transparent"
                 }
 
-
         stylesheet = rf"""
             QPushButton {{
-                border-radius: 25px; /* Half of the width/height */
+                border-radius: {int(L/2)}px; /* Half of the width/height */
                 background-color: {color_rgba[color]};
                 border: {6 if selected == True else 2}px {"dashed" if pawn == 0 else ""} solid {border_color};
+                padding: 0px 0px 0px 0px;
             }}
             QPushButton:hover {{
                 border: 4px solid {border_color};
