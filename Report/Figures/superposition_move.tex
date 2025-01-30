@@ -1,0 +1,50 @@
+\newsavebox{\superpositioncircuit}
+\newsavebox{\superpositionvis}
+\newsavebox{\dicesuper}
+
+\savebox{\superpositioncircuit}{
+    \begin{quantikz}
+        \lstick{$\ket{1}_0$} & \ctrl{1} &\ctrl{1} & \swap{2} &           & \rstick{$\ket{0}_0$}\\[-0.5em]
+        \lstick{$\ket{0}_1$} & \targ{ } &\gate{H} &          &  \ctrl{1} & \rstick[wires=2]{\begin{tabular}[t]{l} $\ket{10}_{12}$\\$-\ket{01}_{12}$\end{tabular}}\\[-0.5em]
+        \lstick{$\ket{0}_2$} & &         & \swap{-2}&  \targ{ } & \\[-0.5em]
+    \end{quantikz}
+}
+
+\savebox{\dicesuper}{
+    \begin{tikzpicture}
+        \def\dielength{1}
+        \def\dlwith{2}
+        \def\dotsize{\dielength cm * 0.2}
+        \node(die1) [rectangle, draw, line width = \dlwith pt, minimum width = \dielength cm, minimum height = \dielength cm] at (-\dielength/2-0.1*\dielength,0) {};
+        
+        \node [circle, draw, fill, minimum size = \dotsize, inner sep=0pt] at ($(die1) + (0 * \dielength,-0*\dielength)$) {};
+
+        \node(die2) [rectangle, draw, line width = \dlwith pt, minimum width = \dielength cm, minimum height = \dielength cm] at (+\dielength/2+0.1*\dielength,0) {};
+        \node [circle, draw, fill, minimum size = \dotsize, inner sep=0pt] at ($(die2) + (0.2 * \dielength,0.2*\dielength)$) {};
+        \node [circle, draw, fill, minimum size = \dotsize, inner sep=0pt] at ($(die2) + (-0.2 * \dielength,-0.2*\dielength)$) {};
+    \end{tikzpicture}
+}
+
+\savebox{\superpositionvis}{
+    \begin{tikzpicture}
+        \def\d{1.1}
+        \def\size{0.8 cm}
+        \node (arrow) [single arrow, draw, minimum width = 40 pt, single arrow head extend=3pt, minimum height=60 pt] at (0,0) {};
+        \node (dice) [] at (0,0) {\scalebox{0.5}{\usebox{\dicesuper}}};
+        \node (c0l) [circle, draw, minimum size = \size, pattern = horizontal lines, fill] at ($(arrow.west) + (-2.5*\d,0)$) {};
+        \node[circle, fill=white, inner sep=0.3mm, text=black] at ($(arrow.west) + (-2.5*\d,0)$) {0};
+        \node (c1l) [circle, draw, minimum size = \size] at ($(arrow.west) + (-1.5*\d,0)$) {1};
+        \node (c2l) [circle, draw, minimum size = \size] at ($(arrow.west) + (-0.5*\d,0)$) {2};
+        
+        \node (c0r) [circle, draw, minimum size = \size] at ($(arrow.east) + (0.5*\d,0)$) {0};
+        \node (c1r) [circle, draw, minimum size = \size, pattern = horizontal lines, fill, fill opacity = 0.75] at ($(arrow.east) + (1.5*\d,0)$) {};
+        \node[circle, fill=white, inner sep=0.3mm, text=black] at ($(arrow.east) + (1.5*\d,0)$) {1};
+        \node (c2r) [circle, draw, minimum size = \size, pattern = horizontal lines, fill, fill opacity = 0.75] at ($(arrow.east) + (2.5*\d,0)$) {};
+        \node[circle, fill=white, inner sep=0.3mm, text=black] at ($(arrow.east) + (2.5*\d,0)$) {2};
+    \end{tikzpicture}
+}
+
+\begin{tikzpicture}
+    \node (circuit) [] at (0,0) {\scalebox{1.4}{\usebox{\superpositioncircuit}}};
+    \node (vis) [above] at ($(0,0.3)+(circuit.north)$) {\usebox{\superpositionvis}};
+\end{tikzpicture}

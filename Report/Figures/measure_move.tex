@@ -1,0 +1,39 @@
+\newsavebox{\measurecircuit}
+\newsavebox{\measurevis}
+
+
+\savebox{\measurecircuit}{
+    \begin{quantikz}
+        \lstick[wires=2]{\begin{tabular}[t]{r} $\ket{10}_{01}$\\$+\ket{01}_{01}$\end{tabular}} & \meter{}  & \setwiretype{c} \\[-0.5em]
+        & \meter{} & \setwiretype{c} \\[-0.5em]
+    \end{quantikz}
+}
+
+\savebox{\measurevis}{
+    \begin{tikzpicture}
+        \def\d{1.1}
+        \def\size{0.8 cm}
+        \node (arrow) [single arrow, draw, minimum width = 40 pt, single arrow head extend=3pt, minimum height=60 pt] at (0,0) {};
+        \node (c0l) [circle, draw, minimum size = \size, pattern = horizontal lines, fill, fill opacity=0.75] at ($(arrow.west) + (-1.5*\d,0)$) {};
+        \node[circle, fill=white, inner sep=0.3mm, text=black] at (c0l) {0};
+        \node (c1l) [circle, draw, minimum size = \size, pattern = horizontal lines, fill, fill opacity = 0.75] at ($(arrow.west) + (-0.5*\d,0)$) {};
+        \node[circle, fill=white, inner sep=0.3mm, text=black] at (c1l) {1};
+
+        \def\h{0.75}
+        
+        \node (c0ar) [circle, draw, minimum size = \size, pattern = horizontal lines, fill, fill opacity = 0.75] at ($(arrow.east) + (0.5*\d,\h)$) {};
+        \node[circle, fill=white, inner sep=0.3mm, text=black] at (c0ar) {0};
+        \node (c1ar) [circle, draw, minimum size = \size] at ($(arrow.east) + (1.5*\d,\h)$) {1};
+
+        \node [] at ($(arrow.east) + (1*\d,0)$) {OR};
+        
+        \node (c0br) [circle, draw, minimum size = \size] at ($(arrow.east) + (0.5*\d,-\h)$) {0};
+        \node (c1br) [circle, draw, minimum size = \size, pattern = horizontal lines, fill, fill opacity = 0.75] at ($(arrow.east) + (1.5*\d,-\h)$) {};
+        \node[circle, fill=white, inner sep=0.3mm, text=black] at (c1br) {1};
+    \end{tikzpicture}
+}
+
+\begin{tikzpicture}
+    \node (circuit) [] at (0,0) {\scalebox{1.5}{\usebox{\measurecircuit}}};
+    \node (vis) [above] at ($(0,0.3)+(circuit.north)$) {\usebox{\measurevis}};
+\end{tikzpicture}

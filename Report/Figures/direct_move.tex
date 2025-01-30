@@ -1,0 +1,51 @@
+\newsavebox{\directmovecircuit}
+\newsavebox{\directmovevis}
+\newsavebox{\dicedirect}
+
+\savebox{\directmovecircuit}{
+    \begin{quantikz}
+        \lstick{$\ket{1}_0$} & \swap{2} & \rstick{$\ket{0}_0$}\\
+        \lstick{$\ket{0}_1$}& & \rstick{$\ket{0}_1$}\\
+        \lstick{$\ket{0}_2$} &\swap{-2}&\rstick{$\ket{1}_2$}\\
+    \end{quantikz}
+}
+
+\savebox{\dicedirect}{
+    \begin{tikzpicture}
+        \def\dielength{1}
+        \def\dlwith{2}
+        \def\dotsize{\dielength cm * 0.2}
+        \node(die1) [rectangle, draw, line width = \dlwith pt, minimum width = \dielength cm, minimum height = \dielength cm] at (-\dielength/2-0.1*\dielength,0) {};
+        
+        \node [circle, draw, fill, minimum size = \node [circle, draw, fill, minimum size = \dotsize, inner sep=0pt] at ($(die1) + (0.2 * \dielength,0.2*\dielength)$) {};
+        \node [circle, draw, fill, minimum size = \dotsize, inner sep=0pt] at ($(die1) + (-0.2 * \dielength,-0.2*\dielength)$) {};
+
+        \node(die2) [rectangle, draw, line width = \dlwith pt, minimum width = \dielength cm, minimum height = \dielength cm] at (+\dielength/2+0.1*\dielength,0) {};
+        \node [circle, draw, fill, minimum size = \node [circle, draw, fill, minimum size = \dotsize, inner sep=0pt] at ($(die2) + (0.2 * \dielength,0.2*\dielength)$) {};
+        \node [circle, draw, fill, minimum size = \dotsize, inner sep=0pt] at ($(die2) + (-0.2 * \dielength,-0.2*\dielength)$) {};
+    \end{tikzpicture}
+}
+
+\savebox{\directmovevis}{
+    \begin{tikzpicture}
+        \def\d{1.1}
+        \def\size{0.8 cm}
+        \node (arrow) [single arrow, draw, minimum width = 40 pt, single arrow head extend=3pt, minimum height=60 pt] at (0,0) {};
+        \node (dice) [] at (0,0) {\scalebox{0.5}{\usebox{\dicedirect}}};
+        
+        \node (c0l) [circle, draw, minimum size = \size, pattern = horizontal lines, fill] at ($(arrow.west) + (-2.5*\d,0)$) {};
+        \node[circle, fill=white, inner sep=0.3mm, text=black] at ($(arrow.west) + (-2.5*\d,0)$) {0};
+        \node (c1l) [circle, draw, minimum size = \size] at ($(arrow.west) + (-1.5*\d,0)$) {1};
+        \node (c2l) [circle, draw, minimum size = \size] at ($(arrow.west) + (-0.5*\d,0)$) {2};
+        
+        \node (c1r) [circle, draw, minimum size = \size] at ($(arrow.east) + (0.5*\d,0)$) {0};
+        \node (c2r) [circle, draw, minimum size = \size] at ($(arrow.east) + (1.5*\d,0)$) {1};
+        \node (c3r) [circle, draw, minimum size = \size, pattern = horizontal lines, fill] at ($(arrow.east) + (2.5*\d,0)$) {};
+        \node[circle, fill=white, inner sep=0.3mm, text=black] at ($(arrow.east) + (2.5*\d,0)$) {2};
+    \end{tikzpicture}
+}
+
+\begin{tikzpicture}
+    \node (circuit) [] at (0,0) {\scalebox{1.5}{\usebox{\directmovecircuit}}};
+    \node (vis) [above] at ($(0,0.1)+(circuit.north)$) {\usebox{\directmovevis}};
+\end{tikzpicture}
