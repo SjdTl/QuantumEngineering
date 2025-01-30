@@ -1,39 +1,5 @@
-%% 
-%% Copyright 2007-2020 Elsevier Ltd
-%% 
-%% This file is part of the 'Elsarticle Bundle'.
-%% ---------------------------------------------
-%% 
-%% It may be distributed under the conditions of the LaTeX Project Public
-%% License, either version 1.2 of this license or (at your option) any
-%% later version.  The latest version of this license is in
-%%    http://www.latex-project.org/lppl.txt
-%% and version 1.2 or later is part of all distributions of LaTeX
-%% version 1999/12/01 or later.
-%% 
-%% The list of all files belonging to the 'Elsarticle Bundle' is
-%% given in the file `manifest.txt'.
-%% 
-%% Template article for Elsevier's document class `elsarticle'
-%% with harvard style bibliographic references
-
-%\documentclass[preprint,12pt,authoryear]{elsarticle}
-
-%% Use the option review to obtain double line spacing
-%% \documentclass[authoryear,preprint,review,12pt]{elsarticle}
-
-%% Use the options 1p,twocolumn; 3p; 3p,twocolumn; 5p; or 5p,twocolumn
-%% for a journal layout:
-%% \documentclass[final,1p,times,authoryear]{elsarticle}
-%% \documentclass[final,1p,times,twocolumn,authoryear]{elsarticle}
-%% \documentclass[final,3p,times,authoryear]{elsarticle}
-%% \documentclass[final,3p,times,twocolumn,authoryear]{elsarticle}
-%% \documentclass[final,5p,times,authoryear]{elsarticle}
  \documentclass[final,5p,times,twocolumn,authoryear]{elsarticle}
 
-%% For including figures, graphicx.sty has been loaded in
-%% elsarticle.cls. If you prefer to use the old commands
-%% please give \usepackage{epsfig}
 
 %% The amssymb package provides various useful mathematical symbols
 \usepackage{amssymb}
@@ -105,54 +71,7 @@
 
 \begin{frontmatter}
 
-%% Title, authors and addresses
-
-%% use the tnoteref command within \title for footnotes;
-%% use the tnotetext command for theassociated footnote;
-%% use the fnref command within \author or \affiliation for footnotes;
-%% use the fntext command for theassociated footnote;
-%% use the corref command within \author for corresponding author footnotes;
-%% use the cortext command for theassociated footnote;
-%% use the ead command for the email address,
-%% and the form \ead[url] for the home page:
-%% \title{Title\tnoteref{label1}}
-%% \tnotetext[label1]{}
-%% \author{Name\corref{cor1}\fnref{label2}}
-%% \ead{email address}
-%% \ead[url]{home page}
-%% \fntext[label2]{}
-%% \cortext[cor1]{}
-%% \affiliation{organization={},
-%%            addressline={}, 
-%%            city={},
-%%            postcode={}, 
-%%            state={},
-%%            country={}}
-%% \fntext[label3]{}
-
-% \title{\textbf{Mens Erger Je Niet With A Quantum Twist}\\
-% \textbf{Introducing quantum effects by playing a quantum version of a board game}\\
-% Creating a quantum board game (Mens erger je niet!) which can be run on a quantum computer to showcase quantum phenomena}
-% From dice to qubits: A quantum version of Mens Erger Je Niet!
-% Quantum Mens Erger Je Niet!: A Board Game to Demonstrate Quantum Mechanics that can be run on Quantum computer
-%Creating a quantum board game to showcase quantum phenomena which can be run on a quantum computer
 \title{Quantum "Mens Erger Je Niet!": A Board Game to Demonstrate Quantum Mechanics that can be run on a Quantum Computer}
-
-%% use optional labels to link authors explicitly to addresses:
-%% \author[label1,label2]{}
-%% \affiliation[label1]{organization={},
-%%             addressline={},
-%%             city={},
-%%             postcode={},
-%%             state={},
-%%             country={}}
-%%
-%% \affiliation[label2]{organization={},
-%%             addressline={},
-%%             city={},
-%%             postcode={},
-%%             state={},
-%%             country={}}
 
 \author[first]{Kyrian Rahimatulla, Alexis Fimeyer, Emirhan Balban, Guo Chuen Liu, Sjoerd Terlouw}
 \affiliation[first]{organization={Delft University of Technology}}
@@ -161,25 +80,10 @@
 A quantum board game is constructed using the classical board game "Mens erger je niet!" as a foundation. New game mechanics are added and the size of the game is reduced. The positions on the board and the winning positions are encoded using qubits. As moves are made, classical logic is used to update the quantum circuit by appending quantum gates. Four bases are used to measure the positions of the pawns. With these bases, the Bell test is recreated. The quantum circuit is optimized to remove unnecessary gates and idle qubits to remain under the 29-qubit limit. The smaller circuit is then transpiled and run on the IBM Sherbrooke quantum computer and a simulator. It is concluded that superposition, entanglement and measurement can be implemented into the game while keeping it playable for the general audience as an educational resource.
 \end{abstract}
 
-%%Graphical abstract
-%\begin{graphicalabstract}
-%\includegraphics{grabs}
-%\end{graphicalabstract}
-
-%%Research highlights
-%\begin{highlights}
-%\item Research highlight 1
-%\item Research highlight 2
-%\end{highlights}
-
 \begin{keyword}
 %% keywords here, in the form: keyword \sep keyword, up to a maximum of 6 keywords
 Quantum game \sep Mens erger je niet! \sep quantum mechanics \sep quantum gates \sep qubits
 
-%% PACS codes here, in the form: \PACS code \sep code
-
-%% MSC codes here, in the form: \MSC code \sep code
-%% or \MSC[2008] code \sep code (2000 is the default)
 
 \end{keyword}
 
@@ -284,7 +188,7 @@ The gates added in front of the Z-measurement are described by the following mat
 \begin{align}
 \begin{split}
     H=\frac{1}{\sqrt{2}}\left[\begin{matrix}1 & 1 \\ 1 & -1 \\ \end{matrix}\right], \\
-    \text{ for the X-basis} \\
+    \text{ for the X-basis.} \\
 \end{split}
 \label{eq:Heq}
 \end{align}
@@ -335,12 +239,19 @@ With the ability to measure in different bases, it is possible to recreate the B
   \item Finally $\frac{1}{\sqrt{2}}(\ket{000110} - \ket{000101})$: Green 1 throws double 3, so it captures Red 1.
 \end{enumerate}
 
+%\begin{equation}
+    %\ket{\psi^-}=\frac{1}{\sqrt{2}}(\ket{10} - \ket{01})
+    %\label{eq:singlet_state}
+%\end{equation}
+
+The last state can be separated into $\frac{1}{\sqrt{2}}(\ket{0001} \otimes (\ket{10} - \ket{01}))$, which contains the singlet state shown in Equation \ref{eq:singlet_state}.
+
 \begin{equation}
     \ket{\psi^-}=\frac{1}{\sqrt{2}}(\ket{10} - \ket{01})
     \label{eq:singlet_state}
 \end{equation}
 
-The last state can be separated into $\frac{1}{\sqrt{2}}(\ket{0001} \otimes (\ket{10} - \ket{01}))$, which is the Bell state shown in Equation \ref{eq:singlet_state}. By triggering a measurement with a pawn at the winning position, the Bell state will be measured in different bases. For example, if Purple 1 triggers the measurement, the measurement bases will be R for Red 1 and X for Green 2. The Bell inequality is as follows:
+By triggering a measurement with a pawn at the winning position, the Bell state will be measured in different bases. For example, if Purple 1 triggers the measurement, the measurement bases will be R for Red 1 and X for Green 2. The Bell inequality is as follows:
 \begin{equation}
     |S| = |\langle A_{1} B_{1} \rangle - \langle A_{1} B_{2} \rangle + \langle A_{2} B_{1} \rangle + \langle A_{2} B_{2} \rangle|  \leq 2
     \text{.}
@@ -365,9 +276,10 @@ Evaluating this gives the following values\footnote{The calculation itself is te
         \langle ZQ \rangle = - \tfrac{1}{2} \sqrt{2}
     \end{split}
 \end{align}
-This then violates Bell's inequality exactly in the way that is found in the measurements described in figure \ref{fig:bell_test_results}:
+This then violates Bell's inequality exactly in the way that is found in the measurements described in Figure \ref{fig:bell_test_results}:
 \begin{equation}
     S=\langle ZR \rangle + \langle XR \rangle + \langle XQ \rangle - \langle ZQ \rangle = 2 \sqrt{2}
+    \text{.}
 \end{equation}
 % The interesting part of the figure is that it takes quite a while to reach the expectation value of $S$. This can be explained using the variance of $S$. The variance is given by $\langle A^2 \rangle =\operatorname{Tr} \rho A^2$. Calculating this for the system gives:
 % \begin{equation}
@@ -496,27 +408,9 @@ The circuit is measured when a pawn enters its final position, or when the total
 
 \section{Code}\label{QuantumCode}
 
-%% If you have bibdatabase file and want bibtex to generate the
-%% bibitems, please use
-%%
 
 For all code references, please visit the GitHub repository at [\url{https://github.com/SjdTl/QuantumEngineering}]. The README file contains contains instructions to run the game, high-level documentation and some example pictures of the game.  A video walk-through of the game can also be found on \href{https://www.youtube.com/watch?v=1wOmJI2PlPA}{\color{red}YouTube} \cite{youtubewalkthrough}.
-
-%% else use the following coding to input the bibitems directly in the
-%% TeX file.
-
-% \begin{thebibliography}{00}
-
-% \bibitem[Author(year)]{label}
-% % For example:
-% \bibitem[Aladro et al.(2015)]{Aladro15} Aladro, R., Martín, S., Riquelme, D., et al. 2015, \aas, 579, A101
-
-% \end{thebibliography}
 
 \printbibliography
 
 \end{document}
-
-\endinput
-%%
-%% End of file `elsarticle-template-harv.tex'.
