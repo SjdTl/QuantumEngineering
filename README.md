@@ -60,6 +60,10 @@ QuantumEngineering/
 ├── Figures/                    # Contains figures for the report and documentation
 │   ├── general_implementation  # A high overview figure describing how the game operates in the backend
 │   └── ...                     # Other documentation figures
+├── Report/
+│   ├── presentation.pdf        # PDF of the slides of the presentation
+│   ├── QuantumEngineering.pdf  # PDF of the report
+│   └── ...                     # TeX files 
 └── screenshots/                # Contains the screenshots made of the game using f5
 ```
 
